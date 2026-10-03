@@ -33,8 +33,10 @@ pak::pak("UchidaMizuki/ksjdata")
 
 ## Usage
 
+Filter `ksj_available` to find files. Each row is one file, identified by its `file_name` (the name of the archive on the KSJ download site).
+
 ```{r}
-#| eval: false
+#| message: false
 library(ksjdata)
 library(dplyr)
 
@@ -44,11 +46,20 @@ files <- ksj_available |>
     year == 2026,
     prefecture_code %in% c("13", "14")
   )
+files |>
+  select(dataset_name, year_name, area_name, file_name, file_size)
+```
 
-# One file
+Pass a `file_name` to `ksj_get()` to get that file. The terms of use are shown the first time a dataset is requested in a session.
+
+```{r}
 ksj_get("N03-20260101_13_GML.zip")
+```
 
-# Several files
+To get several files, iterate over their names:
+
+```{r}
+#| eval: false
 purrr::map(files$file_name, ksj_get)
 ```
 

@@ -38,8 +38,9 @@ A target object.
 \description{
 \code{ksj_target()} and \code{ksj_target_raw()} declare a target of a 'targets'
 pipeline whose value is \code{ksj_get(file_name, layer, col_names)}. The target
-is rerun when the arguments or the installed version of ksjdata change. To
-declare a target per file, use \code{tarchetypes::tar_eval()}.
+is rerun when the arguments, the URL or the size of the file in
+\link{ksj_available}, or the installed version of ksjdata change. To declare a
+target per file, use \code{tarchetypes::tar_eval()}.
 }
 \examples{
 \dontshow{if (rlang::is_installed("tarchetypes")) withAutoprint(\{ # examplesIf}

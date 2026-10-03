@@ -33,8 +33,10 @@ pak::pak("UchidaMizuki/ksjdata")
 
 ## 使い方
 
+`ksj_available` を絞り込んでファイルを探します。各行が 1 つのファイルで、`file_name`（国土数値情報のダウンロードサイトでのファイル名）で識別します。
+
 ```{r}
-#| eval: false
+#| message: false
 library(ksjdata)
 library(dplyr)
 
@@ -44,11 +46,20 @@ files <- ksj_available |>
     year == 2026,
     prefecture_code %in% c("13", "14")
   )
+files |>
+  select(dataset_name, year_name, area_name, file_name, file_size)
+```
 
-# 1 つのファイル
+`file_name` を `ksj_get()` に渡すと、そのファイルを取得します。利用規約は、セッションで初めてそのデータセットを取得したときに表示されます。
+
+```{r}
 ksj_get("N03-20260101_13_GML.zip")
+```
 
-# 複数のファイル
+複数のファイルは、ファイル名ごとに取得します。
+
+```{r}
+#| eval: false
 purrr::map(files$file_name, ksj_get)
 ```
 

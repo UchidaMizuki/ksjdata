@@ -2,8 +2,9 @@
 #'
 #' `ksj_target()` and `ksj_target_raw()` declare a target of a 'targets'
 #' pipeline whose value is `ksj_get(file_name, layer, col_names)`. The target
-#' is rerun when the arguments or the installed version of ksjdata change. To
-#' declare a target per file, use `tarchetypes::tar_eval()`.
+#' is rerun when the arguments, the URL or the size of the file in
+#' [ksj_available], or the installed version of ksjdata change. To declare a
+#' target per file, use `tarchetypes::tar_eval()`.
 #'
 #' @param name Name of the target: a symbol for `ksj_target()`, a string for
 #'   `ksj_target_raw()`.
@@ -57,7 +58,7 @@ ksj_target_raw <- function(
   check_string(file_name)
   check_string(layer, allow_null = TRUE)
   col_names <- rlang::arg_match(col_names)
-  ksj_find_file(file_name)
+  file <- ksj_find_file(file_name)
 
   command <- rlang::call2(
     "ksj_get",
@@ -66,9 +67,16 @@ ksj_target_raw <- function(
     col_names = col_names,
     .ns = "ksjdata"
   )
-  string <- stringr::str_c(
-    stringr::str_flatten(deparse(command), "\n"),
-    as.character(utils::packageVersion("ksjdata"))
+  # The URL and the size of the file rerun the target when an update of the
+  # catalog replaces the file, even if the version of ksjdata is unchanged.
+  string <- stringr::str_flatten(
+    c(
+      deparse(command),
+      file$url,
+      format(as.numeric(file$file_size), scientific = FALSE),
+      as.character(utils::packageVersion("ksjdata"))
+    ),
+    "\n"
   )
   targets::tar_target_raw(name = name, command = command, string = string, ...)
 }

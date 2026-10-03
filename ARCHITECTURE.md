@@ -95,7 +95,7 @@ A dataset is supported when it has a pipeline, so `ksj_available` can never list
 
 ### Updating the catalog
 
-The catalog is updated by running `data-raw/update.R` and releasing a new version of the package. It is not needed for every version: only to take in changes of the site (new releases, moved files) or of the supported datasets. The diffs of the CSV files and the report of the scripts show what MLIT added, removed, or replaced. A file whose row changed (URL or size) is rebuilt the next time it is requested; other files keep their cached data.
+The catalog is updated by running `data-raw/update.R`, weekly by the workflow `update-catalog.yaml`, which opens a pull request when the files changed and runs R CMD check on it. Users take in the update by installing the package again. The data objects stay `.rda` files, the standard of R packages: the diffs are reviewed in the CSV files of `data-raw/`, and the `.rda` files are small (about 150 kB in all). An update is not needed for every version: only to take in changes of the site (new releases, moved files) or of the supported datasets. The diffs of the CSV files and the report of the scripts show what MLIT added, removed, or replaced. A file whose row changed (URL or size) is rebuilt the next time it is requested; other files keep their cached data.
 
 ## Names
 
@@ -148,7 +148,7 @@ English names would come from the product specification of each dataset (`specif
 
 `ksj_get()` returns the layer as one `sf` tibble: its attributes, named as above, and its geometry. No columns are added; the file is known to the caller, who adds columns of `ksj_available` when needed.
 
-`ksj_target(name, file_name, layer, col_names)` and `ksj_target_raw()` declare a target whose command is that call of `ksj_get()`, so a pipeline gets the same data. A target per file is declared with `tarchetypes::tar_eval()`, which substitutes the values before the targets are created (`tar_map()` substitutes only into commands of targets already created, so it cannot pass a file name to `ksj_target()`). The installed version of ksjdata is part of the target's string, so a new version reruns it.
+`ksj_target(name, file_name, layer, col_names)` and `ksj_target_raw()` declare a target whose command is that call of `ksj_get()`, so a pipeline gets the same data. A target per file is declared with `tarchetypes::tar_eval()`, which substitutes the values before the targets are created (`tar_map()` substitutes only into commands of targets already created, so it cannot pass a file name to `ksj_target()`). The URL and the size of the file in `ksj_available` and the installed version of ksjdata are part of the target's string, so the target is rerun when an update of the catalog replaces the file or when a new version is installed.
 
 Values:
 
@@ -228,7 +228,7 @@ targets' default storage (rds) is used, one target per file. If targets become t
 
 - `Imports`: packages that `R/` uses for users (`tarchives`, `targets`, `rlang`, `cli`, `sf`, `tibble`, `vctrs`, `stringr`, `fs`). `tibble`, `sf`, and `fs` are imported so that their print methods are available. Errors and messages use `cli` (`cli_abort()`, `cli_inform()`); text from the data is escaped before it is passed to cli.
 - Code is formatted with Air (`air.toml`, set up with `usethis::use_air()`).
-- GitHub Actions run R CMD check on the r-lib matrix (`R-CMD-check.yaml`), check the formatting with Air (`format-check.yaml`), and build the pkgdown site to the `gh-pages` branch (`pkgdown.yaml`). The workflows come from `usethis::use_github_action()` and the examples of `posit-dev/setup-air`.
+- GitHub Actions run R CMD check on the r-lib matrix (`R-CMD-check.yaml`), check the formatting with Air (`format-check.yaml`), build the pkgdown site to the `gh-pages` branch (`pkgdown.yaml`), and update the catalog weekly (`update-catalog.yaml`). Pull requests opened with `GITHUB_TOKEN` do not trigger workflows, so `update-catalog.yaml` dispatches `R-CMD-check.yaml` on its branch. The workflows come from `usethis::use_github_action()` and the examples of `posit-dev/setup-air`.
 - `Suggests`: packages used only inside the pipelines (`curl`, `purrr`, `tarchetypes`, `zip`), by `ksj_available_impl()` (`readr`), in examples (`dplyr`), and in tests (`testthat`, `withr`). The scripts in `data-raw/` also use `rvest`, `readxl`, `tidyr`, `devtools`, and `usethis`.
 - Code uses tidyverse and r-lib packages rather than their base equivalents: `stringr` for strings and regular expressions (`str_c()` rather than `paste0()`), `fs` for paths, `purrr` for iteration (the standalone `map()` family of rlang in `R/`, where `purrr` is not imported, and `purrr::map()` with the namespace in `data-raw/`, because `devtools::load_all()` in `data-raw/build.R` attaches the standalone functions over purrr; not `lapply()`, `vapply()`, or `Filter()`), `tibble` for data frames (not `data.frame()` or `as.data.frame()`), `vctrs::vec_split()` and `vctrs::vec_chop()` for splitting (not `split()`), `vctrs::vec_rbind()` for binding rows, `vctrs::vec_match()` and `vctrs::vec_in()` for matching (not `match()`), `dplyr` for joins, and `tidyr::replace_na()` for filling missing values with one value. Columns are dropped with `select(!x)`.
 

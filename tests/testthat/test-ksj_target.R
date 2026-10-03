@@ -16,6 +16,14 @@ test_that("ksj_target() declares a target that calls ksj_get()", {
   )
 })
 
+test_that("ksj_target() is rerun when the file in ksj_available changes", {
+  file <- ksj_available[1, ]
+
+  target <- ksj_target_raw("x", file$file_name)
+
+  expect_match(target$command$string, file$url, fixed = TRUE)
+})
+
 test_that("ksj_target_raw() errors on files that are not in ksj_available", {
   expect_error(
     ksj_target_raw("x", "N03-unknown.zip"),
