@@ -5,7 +5,6 @@
 
 library(rvest)
 library(dplyr)
-library(purrr)
 library(stringr)
 
 index_url <- "https://nlftp.mlit.go.jp/ksj/index.html"
@@ -76,7 +75,7 @@ read_index <- function(url) {
   html <- read_html(url)
   html |>
     html_elements("ul.collapsible") |>
-    map(\(category) read_category(category, url)) |>
+    purrr::map(\(category) read_category(category, url)) |>
     list_rbind() |>
     filter(str_detect(page_url, "/datalist/")) |>
     distinct(page_url, .keep_all = TRUE)
@@ -85,9 +84,9 @@ read_index <- function(url) {
 read_category <- function(category, url) {
   links <- category |>
     html_elements("li.collection-item") |>
-    map(\(item) html_elements(item, "a"))
-  page_links <- map(links, \(x) x[[1]])
-  license_links <- map(links, \(x) x[[length(x)]])
+    purrr::map(\(item) html_elements(item, "a"))
+  page_links <- purrr::map(links, \(x) x[[1]])
+  license_links <- purrr::map(links, \(x) x[[length(x)]])
 
   tibble(
     category_name = category |>
@@ -97,13 +96,13 @@ read_category <- function(category, url) {
       str_remove("^\\s*\\d+\\.\\s*") |>
       str_squish(),
     page_url = page_links |>
-      map_chr(\(x) html_attr(x, "href")) |>
+      purrr::map_chr(\(x) html_attr(x, "href")) |>
       url_absolute(url),
     license_name = license_links |>
-      map_chr(html_text2) |>
+      purrr::map_chr(html_text2) |>
       str_squish(),
     license_url = license_links |>
-      map_chr(\(x) html_attr(x, "href")) |>
+      purrr::map_chr(\(x) html_attr(x, "href")) |>
       url_absolute(url)
   )
 }
@@ -159,13 +158,13 @@ read_files <- function(html, url) {
   links <- html_elements(html, "a[onclick*='DownLd']")
   rows <- xml2::xml_find_first(links, "ancestor::tr[1]")
   tables <- xml2::xml_find_first(links, "ancestor::table[1]")
-  headers <- map(tables, read_header)
-  cells <- map(rows, \(row) {
+  headers <- purrr::map(tables, read_header)
+  cells <- purrr::map(rows, \(row) {
     str_squish(html_text(html_elements(row, xpath = "./td")))
   })
   # The cell of each row under the header `label`, or `NA` without one.
   cell <- function(label) {
-    map2_chr(headers, cells, \(header, row) {
+    purrr::map2_chr(headers, cells, \(header, row) {
       row[vctrs::vec_match(label, header)]
     })
   }
@@ -173,7 +172,7 @@ read_files <- function(html, url) {
   # and the path of the archive.
   path <- html_attr(links, "onclick") |>
     str_extract_all("'[^']*'") |>
-    map_chr(\(args) str_remove_all(args[[3]], "'"))
+    purrr::map_chr(\(args) str_remove_all(args[[3]], "'"))
 
   tibble(
     area_name = cell("地域"),
@@ -242,13 +241,13 @@ read_catalog <- function() {
   pages <- read_index(index_url) |>
     mutate(
       dataset_code = parse_dataset_code(page_url),
-      page = map(page_url, read_page, .progress = TRUE)
+      page = purrr::map(page_url, read_page, .progress = TRUE)
     ) |>
     tidyr::unnest(page)
 
   report(
     "Pages without download links:",
-    pages |> filter(map_int(files, nrow) == 0) |> select(dataset_code)
+    pages |> filter(purrr::map_int(files, nrow) == 0) |> select(dataset_code)
   )
 
   files <- pages |>

@@ -17,7 +17,8 @@ A tibble with one row per file and the columns:
 prefecture, otherwise \code{NA}.}
 \item{datum_name}{Geodetic datum, as labeled in the download table.}
 \item{file_name}{Name of the archive.}
-\item{file_size}{Size as published, in MB (\code{units}).}
+\item{file_size}{Size as published (\code{fs::fs_bytes}). Sizes are published
+in MB and KB, read as 10^6 and 10^3 bytes.}
 \item{url}{URL of the archive.}
 \item{license_name}{Terms of use, as labeled on the index page.}
 \item{license_note}{Notes on the terms from the dataset page.}

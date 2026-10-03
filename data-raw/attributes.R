@@ -2,7 +2,6 @@
 # `data-raw/update.R`.
 
 library(dplyr)
-library(purrr)
 library(stringr)
 library(tidyr)
 

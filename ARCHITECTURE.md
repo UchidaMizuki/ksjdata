@@ -5,7 +5,7 @@
 National Land Numerical Information (国土数値情報, KSJ), published by the Ministry of Land, Infrastructure, Transport and Tourism, through one catalog. Datasets are added as they are needed and become supported (see [Supported datasets](#supported-datasets)).
 
 - `ksj_available` is the catalog that users see: it lists every supported file, with its dataset, release, area, and terms of use. Users browse and filter it to find what they need. A file that is not in it is not supported.
-- `ksj_get()` takes rows of `ksj_available` and returns the data of those files only. Nothing else is downloaded.
+- `ksj_get()` takes the name of one file of `ksj_available` and returns one layer of it. Nothing else is downloaded.
 
 Out of scope: transformations for a particular analysis (simplifying, dissolving, aggregating, reprojecting), harmonizing attributes across releases, inventing names, and redistributing data.
 
@@ -27,7 +27,7 @@ Out of scope: transformations for a particular analysis (simplifying, dissolving
 - `data-raw/report.R`: reports shared by the scripts, including the rows of each data object added, removed, or changed since the saved one.
 - `inst/tarchives/<code>/_targets.R`: one tarchives pipeline per supported dataset, for example `l01` (地価公示), `n03` (行政区域), or `s05-d`. `<code>` is the KSJ code of the dataset page in lower case. Every `_targets.R` has the same few lines and differs only in the code.
 - `inst/tarchives/R/`: helpers shared by the pipelines (building the targets of a dataset from `ksj_available`, downloading, unzipping, reading).
-- `R/`: `ksj_get()`, the target factories `ksj_target()` and `ksj_target_raw()`, the documentation of the data objects `ksj_available` and `ksj_attributes`, and `ksj_available_impl()` and `ksj_attributes_impl()` (unexported). `R/import-standalone-*.R` are rlang's standalone files (`usethis::use_standalone("r-lib/rlang", ...)`): the `map()` family (`purrr`), used for iteration without importing purrr, and the `check_*()` functions (`types-check`), used to validate the arguments of exported functions. The names of the targets (`ksj_target_name()`), the regular expressions of the layer patterns (`ksj_layer_regex()`), and the comparison of dataset codes (`ksj_dataset_key()`) are also defined here, once, and used by the pipelines and `data-raw/`.
+- `R/`: `ksj_get()`, the target factories `ksj_target()` and `ksj_target_raw()`, the documentation of the data objects `ksj_available` and `ksj_attributes`, and `ksj_available_impl()` and `ksj_attributes_impl()` (unexported). `R/import-standalone-*.R` are rlang's standalone files (`usethis::use_standalone("r-lib/rlang", ...)`): the `map()` family (`purrr`), used for iteration without importing purrr, and the `check_*()` functions (`types-check`), used to validate the arguments of exported functions. The names of the targets (`ksj_target_name()`, exported for the pipelines), the regular expressions of the layer patterns (`ksj_layer_regex()`), and the comparison of dataset codes (`ksj_dataset_key()`) are also defined here, once, and used by the pipelines and `data-raw/`.
 - `tests/testthat/fixtures/`: small synthetic archives that mimic the published layouts. The pipeline helpers are tested on these, not on the published files.
 
 The scripts in `data-raw/` are run by the maintainer, never by users or tests. `data-raw/` is not part of the built package, as is usual for raw data and the scripts that process it.
@@ -64,7 +64,7 @@ Columns:
 | `prefecture_code` | Two-digit prefecture code when the area is a prefecture, otherwise `NA` |
 | `datum_name` | Geodetic datum, as labeled in the download table (世界測地系, 日本測地系) |
 | `file_name` | Name of the archive in its URL, for example `N03-20250101_13_GML.zip` |
-| `file_size` | Size as published (`units`, in MB; sizes in KB are converted with a factor of 1000), or `NA` if it cannot be parsed |
+| `file_size` | Size as published (`fs::fs_bytes`; sizes in MB and KB are read as 10^6 and 10^3 bytes), or `NA` if it cannot be parsed |
 | `url` | Absolute URL of the archive |
 | `license_name` | Terms, as labeled on the index page (CC_BY_4.0, 商用可, 非商用, ...) |
 | `license_note` | Notes on the terms from the dataset page, for example that secondary use may need an application to the Geospatial Information Authority of Japan |
@@ -83,7 +83,7 @@ Column naming of the catalog and the attribute table (the data are named as desc
 
 - Columns are in snake_case. `_code` is a code from an official classification, `_id` is an arbitrary record identifier, and `_name` is a label.
 - Words are spelled out. The one exception is counts, which are named `n_<things>`.
-- Physical quantities are `units` columns, so names carry no unit suffix.
+- Quantities carry their unit in their class (`fs::fs_bytes` for sizes), so names carry no unit suffix.
 
 ### Supported datasets
 
@@ -133,11 +133,12 @@ English names would come from the product specification of each dataset (`specif
 
 ## Getting data
 
-`ksj_get(files, layer = NULL, col_names = c("ja", "raw"))` takes a data frame of rows of `ksj_available`, for example `ksj_available |> dplyr::filter(dataset_code == "N03", year == 2026, prefecture_code == "13")`.
+`ksj_get(file_name, layer = NULL, col_names = c("ja", "raw"))` takes the name of one file, a value of `file_name` in `ksj_available` (for example `"N03-20260101_13_GML.zip"`), and returns one layer of it.
 
-- Rows are matched to `ksj_available` by `dataset_code` and `file_name`. A row that is not in it is an error.
-- Only the targets of the requested files are built, so only those files are downloaded. Each file is got with `tarchives::tar_get_archive_raw()`, which checks a target at most once per session.
-- If the files hold more than one layer, `layer` names the one to return: its name in the archive (the file name without the extension), or the `layer_pattern` or `feature_name` in `ksj_attributes` of a layer that describes it (see [Matching layers](#matching-layers)). The argument is `layer`, not `feature`, because it selects a data file of the archive, while a feature is one row. The pattern and the feature name apply to every file of a dataset, but `feature_name` alone does not always identify a layer (the ten layers of P03 are all 発電施設（ポイント）). A name that matches no layer or several layers of a file is an error that lists them.
+- One call returns one layer of one file, so a result never mixes layouts: releases, areas, and formats of a dataset can differ in columns, types, and coordinate reference systems, and binding them silently would fill columns with `NA` or fail on types. Several files are got by iterating over their names (`purrr::map(files$file_name, ksj_get)`), and bound by the user when their layouts agree.
+- `file_name` is the key: file names are unique across `ksj_available` (a test checks it), so the dataset is not needed. A name that is not in it is an error.
+- Only the target of the requested file is built, so only that file is downloaded. It is got with `tarchives::tar_get_archive_raw()`, which checks a target at most once per session.
+- If the file holds more than one layer, `layer` names the one to return: its name in the archive (the file name without the extension), or the `layer_pattern` or `feature_name` in `ksj_attributes` of a layer that describes it (see [Matching layers](#matching-layers)). The argument is `layer`, not `feature`, because it selects a data file of the archive, while a feature is one row. The pattern and the feature name apply to every file of a dataset, but `feature_name` alone does not always identify a layer (the ten layers of P03 are all 発電施設（ポイント）). A name that matches no layer or several layers of a file is an error that lists them.
 - `col_names = "ja"` (the default) renames the columns to `attribute_name`. This is allowed only when the columns read are exactly the codes of a layer of `ksj_attributes` for the release of the file (its `year`), and that layer has a name for every code. Otherwise it is an error that names the failed check and suggests `col_names = "raw"`.
 - `col_names = "raw"` keeps the names of the file, for any release.
 - Names of the file and Japanese names are never mixed in one result.
@@ -145,12 +146,9 @@ English names would come from the product specification of each dataset (`specif
 
 ### Output
 
-`ksj_get()` returns one `sf` tibble:
+`ksj_get()` returns the layer as one `sf` tibble: its attributes, named as above, and its geometry. No columns are added; the file is known to the caller, who adds columns of `ksj_available` when needed.
 
-- `dataset_code` and `file_name` come first, so every row can be traced to its row of `ksj_available`. Other columns of `ksj_available` are joined by the user when needed.
-- Attributes follow, named as above.
-- Rows of several files are bound together. Attributes missing from a file are `NA`.
-- Files with different coordinate reference systems are not bound together; that is an error.
+`ksj_target(name, file_name, layer, col_names)` and `ksj_target_raw()` declare a target whose command is that call of `ksj_get()`, so a pipeline gets the same data. A target per file is declared with `tarchetypes::tar_eval()`, which substitutes the values before the targets are created (`tar_map()` substitutes only into commands of targets already created, so it cannot pass a file name to `ksj_target()`). The installed version of ksjdata is part of the target's string, so a new version reruns it.
 
 Values:
 
@@ -161,11 +159,11 @@ Values:
 
 ## Pipelines
 
-Each pipeline has one static branch per file of its dataset (`tarchetypes::tar_map()` over the dataset's rows of `ksj_available`).
+Each pipeline has one target per file of its dataset, declared with `tarchetypes::tar_eval()` over the dataset's rows of `ksj_available`, the same way users declare a target per file with `ksj_target()`.
 
 - A target downloads its archive to a temporary directory, reads it, and returns a named list of layers with the names of the file as column names. Names are applied in `ksj_get()`, so that a change of names does not rebuild any target.
 - The archive is not kept, so the store holds only the parsed data.
-- Target names are derived from `file_name` (`N03-20250101_13_GML.zip` becomes `ksj_n03_20250101_13_gml`), so they stay the same when other rows of the catalog change. The prefix `ksj_` comes from `tar_map()` and keeps names valid when a file name starts with a digit (`1km_mesh_2024_GML.zip`).
+- Target names are derived from `file_name` by `ksj_target_name()` (`N03-20250101_13_GML.zip` becomes `ksj_n03_20250101_13_gml`), so they stay the same when other rows of the catalog change. The prefix `ksj_` keeps names valid when a file name starts with a digit (`1km_mesh_2024_GML.zip`). `ksj_target_name()` is exported (with `@keywords internal`, so it is not in the reference index) because the pipelines call it; they use only exported functions of ksjdata, never `:::`.
 - The row of `ksj_available` is part of the target's command, so a change of URL or size rebuilds that target only.
 
 ## Reading files
@@ -228,10 +226,11 @@ targets' default storage (rds) is used, one target per file. If targets become t
 
 ## Dependencies
 
-- `Imports`: packages that `R/` uses for users (`tarchives`, `targets`, `rlang`, `cli`, `sf`, `tibble`, `vctrs`, `units`, `stringr`, `fs`). `tibble`, `sf`, and `units` are imported so that their print methods are available. Errors and messages use `cli` (`cli_abort()`, `cli_inform()`); text from the data is escaped before it is passed to cli.
+- `Imports`: packages that `R/` uses for users (`tarchives`, `targets`, `rlang`, `cli`, `sf`, `tibble`, `vctrs`, `stringr`, `fs`). `tibble`, `sf`, and `fs` are imported so that their print methods are available. Errors and messages use `cli` (`cli_abort()`, `cli_inform()`); text from the data is escaped before it is passed to cli.
 - Code is formatted with Air (`air.toml`, set up with `usethis::use_air()`).
-- `Suggests`: packages used only inside the pipelines (`curl`, `dplyr`, `purrr`, `tarchetypes`, `zip`), by `ksj_available_impl()` (`readr`), and in tests (`testthat`, `withr`). The scripts in `data-raw/` also use `rvest`, `readxl`, `tidyr`, `devtools`, and `usethis`.
-- Code uses tidyverse and r-lib packages rather than their base equivalents: `stringr` for strings and regular expressions (`str_c()` rather than `paste0()`), `fs` for paths, `purrr` for iteration (the standalone `map()` family of rlang in `R/`, where `purrr` is not imported; not `lapply()`, `vapply()`, or `Filter()`), `tibble` for data frames (not `data.frame()` or `as.data.frame()`), `vctrs::vec_split()` and `vctrs::vec_chop()` for splitting (not `split()`), `vctrs::vec_rbind()` for binding rows, `vctrs::vec_match()` and `vctrs::vec_in()` for matching (not `match()`), `dplyr` for joins, and `tidyr::replace_na()` for filling missing values with one value. Columns are dropped with `select(!x)`.
+- GitHub Actions run R CMD check on the r-lib matrix (`R-CMD-check.yaml`), check the formatting with Air (`format-check.yaml`), and build the pkgdown site to the `gh-pages` branch (`pkgdown.yaml`). The workflows come from `usethis::use_github_action()` and the examples of `posit-dev/setup-air`.
+- `Suggests`: packages used only inside the pipelines (`curl`, `purrr`, `tarchetypes`, `zip`), by `ksj_available_impl()` (`readr`), in examples (`dplyr`), and in tests (`testthat`, `withr`). The scripts in `data-raw/` also use `rvest`, `readxl`, `tidyr`, `devtools`, and `usethis`.
+- Code uses tidyverse and r-lib packages rather than their base equivalents: `stringr` for strings and regular expressions (`str_c()` rather than `paste0()`), `fs` for paths, `purrr` for iteration (the standalone `map()` family of rlang in `R/`, where `purrr` is not imported, and `purrr::map()` with the namespace in `data-raw/`, because `devtools::load_all()` in `data-raw/build.R` attaches the standalone functions over purrr; not `lapply()`, `vapply()`, or `Filter()`), `tibble` for data frames (not `data.frame()` or `as.data.frame()`), `vctrs::vec_split()` and `vctrs::vec_chop()` for splitting (not `split()`), `vctrs::vec_rbind()` for binding rows, `vctrs::vec_match()` and `vctrs::vec_in()` for matching (not `match()`), `dplyr` for joins, and `tidyr::replace_na()` for filling missing values with one value. Columns are dropped with `select(!x)`.
 
 ## Roadmap (temporary)
 

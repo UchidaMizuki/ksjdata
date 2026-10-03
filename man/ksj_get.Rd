@@ -4,17 +4,14 @@
 \alias{ksj_get}
 \title{Get National Land Numerical Information}
 \usage{
-ksj_get(files, layer = NULL, col_names = c("ja", "raw"))
+ksj_get(file_name, layer = NULL, col_names = c("ja", "raw"))
 }
 \arguments{
-\item{files}{A data frame of rows of \link{ksj_available}. Rows are matched by
-\code{dataset_code} and \code{file_name}.}
+\item{file_name}{Name of a file: a value of \code{file_name} in \link{ksj_available}.}
 
-\item{layer}{If the files hold more than one layer (data file), the layer to
+\item{layer}{If the file holds more than one layer (data file), the layer to
 return: its name in the archive (the file name without the extension), or
-its \code{layer_pattern} or \code{feature_name} in \link{ksj_attributes}. The pattern and
-the feature name apply to every file of a dataset, but a feature name can
-be shared by several layers.}
+its \code{layer_pattern} or \code{feature_name} in \link{ksj_attributes}.}
 
 \item{col_names}{How to name the columns. Unlike in readr, it chooses a
 naming, not the names themselves:
@@ -28,15 +25,15 @@ file, which it does only for the latest release of a dataset.
 }}
 }
 \value{
-An \code{sf} tibble with \code{dataset_code} and \code{file_name}, followed by the
-attributes and the geometry, as published. Attributes missing from a file
-are \code{NA}.
+An \code{sf} tibble with the attributes and the geometry of the layer,
+as published.
 }
 \description{
-\code{ksj_get()} downloads and reads the files given by rows of \link{ksj_available},
-and returns their data in one \code{sf} tibble. Only the requested files are
-downloaded. Each file is read once and cached by the bundled 'targets'
-pipelines (see the tarchives package), so later calls read the cache.
+\code{ksj_get()} downloads and reads one file of \link{ksj_available}, and returns one
+of its layers as an \code{sf} tibble. Only that file is downloaded. Each file is
+read once and cached by the bundled 'targets' pipelines (see the tarchives
+package), so later calls read the cache. To get several files, iterate over
+their names, for example with \code{purrr::map()}.
 }
 \details{
 The first time in a session that a dataset is requested, its terms of use
@@ -48,8 +45,15 @@ and processed data must say that they were processed.
 }
 \examples{
 \dontrun{
+ksj_get("N03-20260101_13_GML.zip")
+
+# Several files
 files <- ksj_available |>
-  dplyr::filter(dataset_code == "N03", year == 2026, prefecture_code == "13")
-ksj_get(files)
+  dplyr::filter(
+    dataset_code == "N03",
+    year == 2026,
+    prefecture_code \%in\% c("13", "14")
+  )
+purrr::map(files$file_name, ksj_get)
 }
 }

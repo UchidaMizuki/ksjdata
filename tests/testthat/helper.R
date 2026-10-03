@@ -30,5 +30,5 @@ named_file <- function() {
 
 # Hides the terms of use, which rlang shows once per session.
 local_quiet_terms <- function(env = parent.frame()) {
-  withr::local_options(rlang_message_verbosity = "quiet", .local_envir = env)
+  withr::local_options(rlib_message_verbosity = "quiet", .local_envir = env)
 }

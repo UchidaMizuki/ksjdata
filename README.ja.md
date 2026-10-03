@@ -4,6 +4,11 @@
 
 # ksjdata
 
+<!-- badges: start -->
+
+[![R-CMD-check](https://github.com/UchidaMizuki/ksjdata/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/UchidaMizuki/ksjdata/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
+
 [English](README.md) \| 日本語
 
 ksjdata
@@ -11,8 +16,10 @@ ksjdata
 
 - `ksj_available`
   はカタログです。対応しているすべてのファイルを、データセット、年、地域、利用規約とともに一覧にします。これを絞り込んでファイルを選びます。
-- `ksj_get()` は、選んだファイルをダウンロードして読み込み、1 つの `sf`
-  tibble として返します。各ファイルは
+- `ksj_get()` は、1 つのファイルをダウンロードして読み込み、1
+  つのレイヤーを `sf` tibble
+  として返します。複数のファイルは、`purrr::map()`
+  などでファイル名ごとに取得します。各ファイルは
   [tarchives](https://github.com/UchidaMizuki/tarchives)
   パッケージでキャッシュされるため、ダウンロードは 1 回だけです。
 - 列名は、公式の属性情報一覧に基づき日本語でつけます。古い年のデータなど、ファイルの列名（通常は
@@ -35,8 +42,32 @@ library(ksjdata)
 library(dplyr)
 
 files <- ksj_available |>
-  filter(dataset_code == "N03", year == 2026, prefecture_code == "13")
-ksj_get(files)
+  filter(
+    dataset_code == "N03",
+    year == 2026,
+    prefecture_code %in% c("13", "14")
+  )
+
+# 1 つのファイル
+ksj_get("N03-20260101_13_GML.zip")
+
+# 複数のファイル
+purrr::map(files$file_name, ksj_get)
+```
+
+[targets](https://docs.ropensci.org/targets/)
+のパイプラインでは、`ksj_target()` で 1
+つのファイルを取得するターゲットを宣言します。ファイルごとに宣言するには
+`tarchetypes::tar_eval()` を使います。
+
+``` r
+tarchetypes::tar_eval(
+  ksj_target(name, file_name),
+  values = list(
+    name = rlang::syms(stringr::str_c("n03_", files$prefecture_code)),
+    file_name = files$file_name
+  )
+)
 ```
 
 データは公開されたとおりに返します。ジオメトリと座標参照系は変更せず、コードの先頭の

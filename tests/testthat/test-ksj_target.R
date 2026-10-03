@@ -1,18 +1,26 @@
 test_that("ksj_target() declares a target that calls ksj_get()", {
-  files <- ksj_available[ksj_available$dataset_code == "N03", ][1:2, ]
+  file_name <- ksj_available$file_name[[1]]
 
-  target <- ksj_target(municipalities, files, col_names = "raw")
+  target <- ksj_target(municipalities, file_name, col_names = "raw")
 
   expect_equal(target$settings$name, "municipalities")
-  command <- target$command$expr[[1]]
-  expect_equal(command[[1]], quote(ksjdata::ksj_get))
-  expect_equal(eval(command$files)$file_name, files$file_name)
-  expect_equal(command$col_names, "raw")
+  expect_equal(
+    target$command$expr[[1]],
+    rlang::call2(
+      "ksj_get",
+      file_name = file_name,
+      layer = NULL,
+      col_names = "raw",
+      .ns = "ksjdata"
+    )
+  )
 })
 
 test_that("ksj_target_raw() errors on files that are not in ksj_available", {
-  files <- tibble::tibble(dataset_code = "N03", file_name = "N03-unknown.zip")
-  expect_error(ksj_target_raw("x", files), class = "ksjdata_error_file")
+  expect_error(
+    ksj_target_raw("x", "N03-unknown.zip"),
+    class = "ksjdata_error_file"
+  )
 })
 
 test_that("ksj_target_name() is derived from the file name", {

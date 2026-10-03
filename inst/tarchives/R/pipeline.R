@@ -1,21 +1,19 @@
 # Helpers shared by the pipelines of ksjdata, sourced by
 # `tarchives::tar_source_archive("ksjdata")`.
 
-# Targets of a dataset: one static branch per file of the dataset in
-# `ksj_available`. The URL and the size are part of the command, so a change of
-# either rebuilds that target only.
+# Targets of a dataset: one per file of the dataset in `ksj_available`. The URL
+# and the size are part of the command, so a change of either rebuilds that
+# target only.
 ksj_pipeline <- function(code) {
   files <- ksjdata::ksj_available
   files <- files[stringr::str_to_lower(files$dataset_code) == code, ]
-  values <- tibble::tibble(
-    suffix = ksjdata:::ksj_target_suffix(files$file_name),
-    url = files$url,
-    file_size = as.numeric(files$file_size)
-  )
-  tarchetypes::tar_map(
-    values = values,
-    names = "suffix",
-    targets::tar_target(ksj, ksj_build_file(url, file_size))
+  tarchetypes::tar_eval(
+    targets::tar_target(name, ksj_build_file(url, file_size)),
+    values = list(
+      name = rlang::syms(ksjdata::ksj_target_name(files$file_name)),
+      url = files$url,
+      file_size = as.numeric(files$file_size)
+    )
   )
 }
 

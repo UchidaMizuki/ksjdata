@@ -11,7 +11,8 @@ Description: Provides National Land Numerical Information (Kokudo
     the package, and cached via 'tarchives'. Attributes are named after
     the official attribute table and product specifications.
 License: MIT + file LICENSE
-URL: https://github.com/UchidaMizuki/ksjdata
+URL: https://github.com/UchidaMizuki/ksjdata,
+    https://uchidamizuki.github.io/ksjdata/
 BugReports: https://github.com/UchidaMizuki/ksjdata/issues
 Depends:
     R (>= 4.1.0)
@@ -24,7 +25,6 @@ Imports:
     tarchives (>= 0.2.0.9000),
     targets,
     tibble,
-    units,
     vctrs
 Suggests:
     curl,

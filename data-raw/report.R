@@ -19,8 +19,9 @@ report_changes <- function(name, new, keys) {
   }
   env <- new.env()
   load(path, envir = env)
+  # Numbers are compared without their classes (such as `fs_bytes`).
   plain <- function(data) {
-    mutate(data, across(where(\(x) inherits(x, "units")), as.numeric))
+    mutate(data, across(where(is.numeric), as.numeric))
   }
   old <- plain(env[[name]])
   new <- plain(new)

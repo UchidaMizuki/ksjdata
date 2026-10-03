@@ -21,7 +21,8 @@
 #'     prefecture, otherwise `NA`.}
 #'   \item{datum_name}{Geodetic datum, as labeled in the download table.}
 #'   \item{file_name}{Name of the archive.}
-#'   \item{file_size}{Size as published, in MB (`units`).}
+#'   \item{file_size}{Size as published (`fs::fs_bytes`). Sizes are published
+#'     in MB and KB, read as 10^6 and 10^3 bytes.}
 #'   \item{url}{URL of the archive.}
 #'   \item{license_name}{Terms of use, as labeled on the index page.}
 #'   \item{license_note}{Notes on the terms from the dataset page.}
@@ -58,7 +59,7 @@ ksj_available_impl <- function(dir = "data-raw") {
   files <- files[
     vctrs::vec_in(stringr::str_to_lower(files$dataset_code), pipelines),
   ]
-  files$file_size <- units::as_units(files$file_size, "MB")
+  files$file_size <- fs::as_fs_bytes(round(files$file_size * 1e6))
   dataset <- datasets[
     vctrs::vec_match(files$dataset_code, datasets$dataset_code),
   ]

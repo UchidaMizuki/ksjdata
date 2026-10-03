@@ -12,6 +12,7 @@ Provides National Land Numerical Information (Kokudo Suuchi Joho) published by t
 Useful links:
 \itemize{
   \item \url{https://github.com/UchidaMizuki/ksjdata}
+  \item \url{https://uchidamizuki.github.io/ksjdata/}
   \item Report bugs at \url{https://github.com/UchidaMizuki/ksjdata/issues}
 }
 

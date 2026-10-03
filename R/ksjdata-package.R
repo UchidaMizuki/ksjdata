@@ -5,7 +5,7 @@
 #' @import rlang
 #' @importFrom sf st_as_sf
 #' @importFrom tibble tibble
-#' @importFrom units as_units
+#' @importFrom fs as_fs_bytes
 ## usethis namespace: end
 
 ## mockable bindings: start

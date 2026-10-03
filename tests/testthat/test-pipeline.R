@@ -116,3 +116,23 @@ test_that("every pipeline script differs only in its code", {
     )
   }
 })
+
+test_that("ksj_pipeline() declares a target per file of the dataset", {
+  helpers <- pipeline_helpers()
+  files <- ksj_available[ksj_available$dataset_code == "S05-d", ]
+
+  targets <- helpers$ksj_pipeline("s05-d")
+
+  expect_equal(
+    purrr::map_chr(targets, \(target) target$settings$name),
+    ksj_target_name(files$file_name)
+  )
+  expect_equal(
+    targets[[1]]$command$expr[[1]],
+    rlang::call2(
+      "ksj_build_file",
+      files$url[[1]],
+      as.numeric(files$file_size[[1]])
+    )
+  )
+})

@@ -1,9 +1,10 @@
 #' Get National Land Numerical Information
 #'
-#' `ksj_get()` downloads and reads the files given by rows of [ksj_available],
-#' and returns their data in one `sf` tibble. Only the requested files are
-#' downloaded. Each file is read once and cached by the bundled 'targets'
-#' pipelines (see the tarchives package), so later calls read the cache.
+#' `ksj_get()` downloads and reads one file of [ksj_available], and returns one
+#' of its layers as an `sf` tibble. Only that file is downloaded. Each file is
+#' read once and cached by the bundled 'targets' pipelines (see the tarchives
+#' package), so later calls read the cache. To get several files, iterate over
+#' their names, for example with `purrr::map()`.
 #'
 #' The first time in a session that a dataset is requested, its terms of use
 #' are shown, and they are also in the `license_*` columns of [ksj_available].
@@ -12,13 +13,10 @@
 #' dataset, by the Ministry of Land, Infrastructure, Transport and Tourism),
 #' and processed data must say that they were processed.
 #'
-#' @param files A data frame of rows of [ksj_available]. Rows are matched by
-#'   `dataset_code` and `file_name`.
-#' @param layer If the files hold more than one layer (data file), the layer to
+#' @param file_name Name of a file: a value of `file_name` in [ksj_available].
+#' @param layer If the file holds more than one layer (data file), the layer to
 #'   return: its name in the archive (the file name without the extension), or
-#'   its `layer_pattern` or `feature_name` in [ksj_attributes]. The pattern and
-#'   the feature name apply to every file of a dataset, but a feature name can
-#'   be shared by several layers.
+#'   its `layer_pattern` or `feature_name` in [ksj_attributes].
 #' @param col_names How to name the columns. Unlike in readr, it chooses a
 #'   naming, not the names themselves:
 #'   * `"ja"` (the default): Japanese names of the attribute table
@@ -27,42 +25,36 @@
 #'     file, which it does only for the latest release of a dataset.
 #'   * `"raw"`: the names of the file, usually attribute codes such as
 #'     `N03_001`. Use it for older releases.
-#' @returns An `sf` tibble with `dataset_code` and `file_name`, followed by the
-#'   attributes and the geometry, as published. Attributes missing from a file
-#'   are `NA`.
+#' @returns An `sf` tibble with the attributes and the geometry of the layer,
+#'   as published.
 #' @export
 #' @examples
 #' \dontrun{
+#' ksj_get("N03-20260101_13_GML.zip")
+#'
+#' # Several files
 #' files <- ksj_available |>
-#'   dplyr::filter(dataset_code == "N03", year == 2026, prefecture_code == "13")
-#' ksj_get(files)
+#'   dplyr::filter(
+#'     dataset_code == "N03",
+#'     year == 2026,
+#'     prefecture_code %in% c("13", "14")
+#'   )
+#' purrr::map(files$file_name, ksj_get)
 #' }
-ksj_get <- function(files, layer = NULL, col_names = c("ja", "raw")) {
-  check_data_frame(files)
+ksj_get <- function(file_name, layer = NULL, col_names = c("ja", "raw")) {
+  check_string(file_name)
   check_string(layer, allow_null = TRUE)
   col_names <- rlang::arg_match(col_names)
-  files <- ksj_match_files(files)
-  ksj_inform_terms(files)
+  file <- ksj_find_file(file_name)
+  ksj_inform_terms(file)
 
-  call <- rlang::current_env()
-  data <- map(vctrs::vec_chop(files), \(file) {
-    ksj_get_file(file, layer = layer, col_names = col_names, call = call)
-  })
-  ksj_bind(data, files)
-}
-
-ksj_get_file <- function(file, layer, col_names, call = rlang::caller_env()) {
   layers <- ksj_read_target(file$dataset_code, file$file_name)
-  name <- ksj_select_layer(layers, file, layer, call = call)
+  name <- ksj_select_layer(layers, file, layer)
   data <- layers[[name]]
   if (col_names == "ja") {
-    data <- ksj_name_columns(data, file, name, call = call)
+    data <- ksj_name_columns(data, file, name)
   }
-  tibble(
-    dataset_code = file$dataset_code,
-    file_name = file$file_name,
-    tibble::as_tibble(data)
-  )
+  data
 }
 
 # Builds the target of a file, if needed, and returns its named list of layers.
@@ -76,58 +68,35 @@ ksj_read_target <- function(dataset_code, file_name) {
 
 # Files ------------------------------------------------------------------------
 
-ksj_match_files <- function(files, call = rlang::caller_env()) {
-  keys <- c("dataset_code", "file_name")
-  if (!all(keys %in% names(files))) {
+# The row of `ksj_available` of a file. File names are unique.
+ksj_find_file <- function(file_name, call = rlang::caller_env()) {
+  available <- ksjdata::ksj_available
+  file <- available[available$file_name == file_name, ]
+  if (nrow(file) == 0) {
     cli::cli_abort(
       c(
-        "{.arg files} must have columns {.field dataset_code} and {.field file_name}.",
-        i = "Use rows of {.code ksj_available}."
+        "Can't find {.file {file_name}} in {.code ksj_available}.",
+        i = "Use a value of {.field file_name} in {.code ksj_available}."
       ),
-      call = call
-    )
-  }
-  if (nrow(files) == 0) {
-    cli::cli_abort("{.arg files} must have at least one row.", call = call)
-  }
-
-  available <- ksjdata::ksj_available
-  index <- vctrs::vec_match(tibble::as_tibble(files[keys]), available[keys])
-  if (anyNA(index)) {
-    missing <- files$file_name[is.na(index)]
-    cli::cli_abort(
-      "Can't find {.file {missing}} in {.code ksj_available}.",
       class = "ksjdata_error_file",
       call = call
     )
   }
-  available[unique(index), ]
+  file
 }
 
-ksj_inform_terms <- function(files) {
-  columns <- c(
-    "dataset_code",
-    "dataset_name",
-    "license_name",
-    "license_note",
-    "license_url"
+# rlang shows the terms of a dataset once per session, by the id of the dataset.
+ksj_inform_terms <- function(file) {
+  cli::cli_inform(
+    c(
+      "Terms of use of {file$dataset_code} ({file$dataset_name}): {file$license_name}",
+      ksj_noncommercial(file$license_name, file$license_note),
+      i = "{file$license_note}",
+      i = "{.url {file$license_url}}"
+    ),
+    .frequency = "once",
+    .frequency_id = ksj_terms_id(file$dataset_code)
   )
-  datasets <- vctrs::vec_unique(files[columns])
-
-  # rlang shows each message once per session, by the id of its dataset.
-  walk(vctrs::vec_chop(datasets), \(dataset) {
-    cli::cli_inform(
-      c(
-        "Terms of use of {dataset$dataset_code} ({dataset$dataset_name}): {dataset$license_name}",
-        ksj_noncommercial(dataset$license_name, dataset$license_note),
-        i = "{dataset$license_note}",
-        i = "{.url {dataset$license_url}}"
-      ),
-      .frequency = "once",
-      .frequency_id = ksj_terms_id(dataset$dataset_code)
-    )
-  })
-  invisible()
 }
 
 ksj_terms_id <- function(dataset_code) {
@@ -330,30 +299,6 @@ ksj_column_differences <- function(columns, codes) {
     ),
     " "
   )
-}
-
-# Binding ----------------------------------------------------------------------
-
-ksj_bind <- function(data, files, call = rlang::caller_env()) {
-  crs <- map(data, \(x) {
-    sf::st_crs(keep(x, \(column) inherits(column, "sfc"))[[1]])
-  })
-  if (!all(map_lgl(crs, \(x) x == crs[[1]]))) {
-    inputs <- stringr::str_replace_na(map_chr(crs, \(x) x$input), "unknown")
-    cli::cli_abort(
-      c(
-        "Can't bind files with different coordinate reference systems.",
-        rlang::set_names(
-          cli_escape(stringr::str_c(files$file_name, ": ", inputs)),
-          "x"
-        ),
-        i = "Get them separately."
-      ),
-      class = "ksjdata_error_crs",
-      call = call
-    )
-  }
-  sf::st_as_sf(vctrs::vec_rbind(!!!data))
 }
 
 # Utilities --------------------------------------------------------------------

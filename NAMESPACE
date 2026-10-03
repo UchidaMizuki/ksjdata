@@ -2,8 +2,9 @@
 
 export(ksj_get)
 export(ksj_target)
+export(ksj_target_name)
 export(ksj_target_raw)
 import(rlang)
+importFrom(fs,as_fs_bytes)
 importFrom(sf,st_as_sf)
 importFrom(tibble,tibble)
-importFrom(units,as_units)

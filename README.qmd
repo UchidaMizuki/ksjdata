@@ -10,12 +10,16 @@ knitr:
 
 # ksjdata
 
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/UchidaMizuki/ksjdata/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/UchidaMizuki/ksjdata/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
+
 English | [日本語](README.ja.md)
 
 ksjdata provides National Land Numerical Information (国土数値情報, KSJ), published by the Ministry of Land, Infrastructure, Transport and Tourism of Japan.
 
 - `ksj_available` is the catalog: it lists every supported file, with its dataset, release, area, and terms of use. Filter it to choose files.
-- `ksj_get()` downloads and reads the files you choose, and returns them as one `sf` tibble. Each file is cached by the [tarchives](https://github.com/UchidaMizuki/tarchives) package, so it is downloaded only once.
+- `ksj_get()` downloads and reads one file, and returns one layer as an `sf` tibble. To get several files, iterate over their names, for example with `purrr::map()`. Each file is cached by the [tarchives](https://github.com/UchidaMizuki/tarchives) package, so it is downloaded only once.
 - Columns are named in Japanese after the official attribute table. Use `col_names = "raw"` to keep the names of the file (usually attribute codes such as `N03_001`), for example for older releases.
 
 ## Installation
@@ -35,8 +39,30 @@ library(ksjdata)
 library(dplyr)
 
 files <- ksj_available |>
-  filter(dataset_code == "N03", year == 2026, prefecture_code == "13")
-ksj_get(files)
+  filter(
+    dataset_code == "N03",
+    year == 2026,
+    prefecture_code %in% c("13", "14")
+  )
+
+# One file
+ksj_get("N03-20260101_13_GML.zip")
+
+# Several files
+purrr::map(files$file_name, ksj_get)
+```
+
+In a [targets](https://docs.ropensci.org/targets/) pipeline, `ksj_target()` declares a target that gets one file. Use `tarchetypes::tar_eval()` to declare one per file.
+
+```{r}
+#| eval: false
+tarchetypes::tar_eval(
+  ksj_target(name, file_name),
+  values = list(
+    name = rlang::syms(stringr::str_c("n03_", files$prefecture_code)),
+    file_name = files$file_name
+  )
+)
 ```
 
 The data are returned as published: geometries and coordinate reference systems are not changed, codes keep their leading zeros, and published zeros stay distinct from blank cells (`NA`).

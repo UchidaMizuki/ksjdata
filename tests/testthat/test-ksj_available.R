@@ -20,11 +20,8 @@ test_that("every pipeline has files, and every file has a pipeline", {
   )
 })
 
-test_that("file names and target names are unique within each dataset", {
-  expect_equal(
-    anyDuplicated(ksj_available[c("dataset_code", "file_name")]),
-    0
-  )
+test_that("file names and target names are unique", {
+  expect_equal(anyDuplicated(ksj_available$file_name), 0)
   targets <- tibble::tibble(
     dataset_code = ksj_available$dataset_code,
     name = ksj_target_name(ksj_available$file_name)

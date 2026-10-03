@@ -5,22 +5,19 @@
 \alias{ksj_target_raw}
 \title{Target of National Land Numerical Information}
 \usage{
-ksj_target(name, files, layer = NULL, col_names = c("ja", "raw"), ...)
+ksj_target(name, file_name, layer = NULL, col_names = c("ja", "raw"), ...)
 
-ksj_target_raw(name, files, layer = NULL, col_names = c("ja", "raw"), ...)
+ksj_target_raw(name, file_name, layer = NULL, col_names = c("ja", "raw"), ...)
 }
 \arguments{
 \item{name}{Name of the target: a symbol for \code{ksj_target()}, a string for
 \code{ksj_target_raw()}.}
 
-\item{files}{A data frame of rows of \link{ksj_available}. Rows are matched by
-\code{dataset_code} and \code{file_name}.}
+\item{file_name}{Name of a file: a value of \code{file_name} in \link{ksj_available}.}
 
-\item{layer}{If the files hold more than one layer (data file), the layer to
+\item{layer}{If the file holds more than one layer (data file), the layer to
 return: its name in the archive (the file name without the extension), or
-its \code{layer_pattern} or \code{feature_name} in \link{ksj_attributes}. The pattern and
-the feature name apply to every file of a dataset, but a feature name can
-be shared by several layers.}
+its \code{layer_pattern} or \code{feature_name} in \link{ksj_attributes}.}
 
 \item{col_names}{How to name the columns. Unlike in readr, it chooses a
 naming, not the names themselves:
@@ -40,11 +37,26 @@ A target object.
 }
 \description{
 \code{ksj_target()} and \code{ksj_target_raw()} declare a target of a 'targets'
-pipeline whose value is \code{ksj_get(files, layer, col_names)}. The target is
-rerun when the files, the arguments, or the installed version of ksjdata
-change.
+pipeline whose value is \code{ksj_get(file_name, layer, col_names)}. The target
+is rerun when the arguments or the installed version of ksjdata change. To
+declare a target per file, use \code{tarchetypes::tar_eval()}.
 }
 \examples{
-files <- ksj_available[ksj_available$dataset_code == "N03", ][1, ]
-ksj_target(municipalities, files)
+\dontshow{if (rlang::is_installed("tarchetypes")) withAutoprint(\{ # examplesIf}
+ksj_target(municipalities, "N03-20260101_13_GML.zip")
+
+# A target per file
+files <- ksj_available[
+  ksj_available$dataset_code == "N03" &
+    ksj_available$year == 2026 &
+    ksj_available$prefecture_code \%in\% c("13", "14"),
+]
+tarchetypes::tar_eval(
+  ksj_target(name, file_name),
+  values = list(
+    name = rlang::syms(stringr::str_c("n03_", files$prefecture_code)),
+    file_name = files$file_name
+  )
+)
+\dontshow{\}) # examplesIf}
 }

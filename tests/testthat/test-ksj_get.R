@@ -6,15 +6,11 @@ test_that("ksj_get() names the columns in Japanese by default", {
     rlang::set_names(list(fake_layer(named$attributes$attribute_code)), layer)
   })
 
-  data <- ksj_get(named$file)
+  data <- ksj_get(named$file$file_name)
 
   expect_s3_class(data, "sf")
   expect_s3_class(data, "tbl_df")
-  expect_named(
-    data,
-    c("dataset_code", "file_name", named$attributes$attribute_name, "geometry")
-  )
-  expect_equal(data$file_name, named$file$file_name)
+  expect_named(data, c(named$attributes$attribute_name, "geometry"))
 })
 
 test_that("ksj_get() names a layer by its columns when its name doesn't match", {
@@ -24,17 +20,9 @@ test_that("ksj_get() names a layer by its columns when its name doesn't match", 
     list(nationwide = fake_layer(rev(named$attributes$attribute_code)))
   })
 
-  data <- ksj_get(named$file)
+  data <- ksj_get(named$file$file_name)
 
-  expect_named(
-    data,
-    c(
-      "dataset_code",
-      "file_name",
-      rev(named$attributes$attribute_name),
-      "geometry"
-    )
-  )
+  expect_named(data, c(rev(named$attributes$attribute_name), "geometry"))
 })
 
 test_that("ksj_get() keeps the names of the file with col_names = 'raw'", {
@@ -45,12 +33,9 @@ test_that("ksj_get() keeps the names of the file with col_names = 'raw'", {
     rlang::set_names(list(fake_layer(c("N03_001", "extra"))), layer)
   })
 
-  data <- ksj_get(named$file, col_names = "raw")
+  data <- ksj_get(named$file$file_name, col_names = "raw")
 
-  expect_named(
-    data,
-    c("dataset_code", "file_name", "N03_001", "extra", "geometry")
-  )
+  expect_named(data, c("N03_001", "extra", "geometry"))
 })
 
 test_that("ksj_get() doesn't name a layer that is not fully covered", {
@@ -62,7 +47,7 @@ test_that("ksj_get() doesn't name a layer that is not fully covered", {
     rlang::set_names(list(fake_layer(columns)), layer)
   })
 
-  expect_snapshot(ksj_get(named$file), error = TRUE)
+  expect_snapshot(ksj_get(named$file$file_name), error = TRUE)
 })
 
 test_that("ksj_get() doesn't name older releases", {
@@ -74,8 +59,11 @@ test_that("ksj_get() doesn't name older releases", {
     list(layer = fake_layer("N03_001"))
   })
 
-  expect_error(ksj_get(file), class = "ksjdata_error_names")
-  expect_equal(names(ksj_get(file, col_names = "raw"))[[3]], "N03_001")
+  expect_error(ksj_get(file$file_name), class = "ksjdata_error_names")
+  expect_named(
+    ksj_get(file$file_name, col_names = "raw"),
+    c("N03_001", "geometry")
+  )
 })
 
 test_that("ksj_get() selects a layer with `layer`", {
@@ -89,72 +77,42 @@ test_that("ksj_get() selects a layer with `layer`", {
     )
   })
 
-  expect_snapshot(ksj_get(named$file), error = TRUE)
+  expect_snapshot(ksj_get(named$file$file_name), error = TRUE)
   expect_equal(
-    names(ksj_get(named$file, layer = "other", col_names = "raw"))[[3]],
-    "other"
+    names(ksj_get(named$file$file_name, layer = "other", col_names = "raw")),
+    c("other", "geometry")
   )
   pattern <- named$attributes$layer_pattern[[1]]
-  expect_equal(nrow(ksj_get(named$file, layer = pattern)), 1)
+  expect_equal(nrow(ksj_get(named$file$file_name, layer = pattern)), 1)
   feature_name <- named$attributes$feature_name[[1]]
-  expect_equal(nrow(ksj_get(named$file, layer = feature_name)), 1)
+  expect_equal(nrow(ksj_get(named$file$file_name, layer = feature_name)), 1)
   expect_error(
-    ksj_get(named$file, layer = "none"),
+    ksj_get(named$file$file_name, layer = "none"),
     class = "ksjdata_error_layer"
   )
 })
 
-test_that("ksj_get() binds files, filling missing attributes with NA", {
-  local_quiet_terms()
-  files <- ksj_available[
-    ksj_available$dataset_code == "N03" & ksj_available$year == 2000,
-  ][1:2, ]
-  local_mocked_bindings(ksj_read_target = function(dataset_code, file_name) {
-    columns <- if (file_name == files$file_name[[1]]) "a" else c("a", "b")
-    list(layer = fake_layer(columns))
-  })
-
-  data <- ksj_get(files, col_names = "raw")
-
-  expect_equal(data$file_name, files$file_name)
-  expect_equal(data$b, c(NA, "x"))
-})
-
-test_that("ksj_get() doesn't bind files with different CRS", {
-  local_quiet_terms()
-  files <- ksj_available[
-    ksj_available$dataset_code == "N03" & ksj_available$year == 2000,
-  ][1:2, ]
-  local_mocked_bindings(ksj_read_target = function(dataset_code, file_name) {
-    crs <- if (file_name == files$file_name[[1]]) 6668 else 4612
-    list(layer = fake_layer("a", crs = crs))
-  })
-
-  expect_error(ksj_get(files, col_names = "raw"), class = "ksjdata_error_crs")
-})
-
 test_that("ksj_get() errors on files that are not in ksj_available", {
-  files <- tibble::tibble(dataset_code = "N03", file_name = "N03-unknown.zip")
-  expect_snapshot(ksj_get(files), error = TRUE)
-  expect_snapshot(ksj_get(tibble::tibble(x = 1)), error = TRUE)
+  expect_snapshot(ksj_get("N03-unknown.zip"), error = TRUE)
 })
 
 test_that("ksj_get() checks its arguments", {
-  file <- ksj_available[1, ]
-  expect_snapshot(ksj_get(file, col_names = "code"), error = TRUE)
-  expect_snapshot(ksj_get(file, layer = 1), error = TRUE)
+  file_name <- ksj_available$file_name[[1]]
+  expect_snapshot(ksj_get(ksj_available[1, ]), error = TRUE)
+  expect_snapshot(ksj_get(file_name, col_names = "code"), error = TRUE)
+  expect_snapshot(ksj_get(file_name, layer = 1), error = TRUE)
 })
 
 test_that("ksj_get() shows the terms of a dataset once per session", {
   rlang::reset_message_verbosity(ksj_terms_id("N03"))
   withr::defer(rlang::reset_message_verbosity(ksj_terms_id("N03")))
-  file <- ksj_available[ksj_available$dataset_code == "N03", ][1, ]
+  file_name <- ksj_available$file_name[ksj_available$dataset_code == "N03"][[1]]
   local_mocked_bindings(ksj_read_target = function(...) {
     list(layer = fake_layer("a"))
   })
 
-  expect_message(ksj_get(file, col_names = "raw"), "Terms of use of N03")
-  expect_no_message(ksj_get(file, col_names = "raw"))
+  expect_message(ksj_get(file_name, col_names = "raw"), "Terms of use of N03")
+  expect_no_message(ksj_get(file_name, col_names = "raw"))
 })
 
 test_that("ksj_noncommercial() states that commercial use is not allowed", {
