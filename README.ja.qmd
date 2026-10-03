@@ -1,0 +1,70 @@
+---
+format: gfm
+knitr:
+  opts_chunk:
+    collapse: true
+    comment: "#>"
+---
+
+<!-- README.ja.md is generated from README.ja.qmd. Please edit that file -->
+
+# ksjdata
+
+[English](README.md) | 日本語
+
+ksjdata は、国土交通省が公開している国土数値情報（KSJ）を提供するパッケージです。
+
+- `ksj_available` はカタログです。対応しているすべてのファイルを、データセット、年、地域、利用規約とともに一覧にします。これを絞り込んでファイルを選びます。
+- `ksj_get()` は、選んだファイルをダウンロードして読み込み、1 つの `sf` tibble として返します。各ファイルは [tarchives](https://github.com/UchidaMizuki/tarchives) パッケージでキャッシュされるため、ダウンロードは 1 回だけです。
+- 列名は、公式の属性情報一覧に基づき日本語でつけます。古い年のデータなど、ファイルの列名（通常は `N03_001` のような属性コード）のまま使う場合は `col_names = "raw"` を指定します。
+
+## インストール
+
+開発版は GitHub からインストールできます。
+
+``` r
+# install.packages("pak")
+pak::pak("UchidaMizuki/ksjdata")
+```
+
+## 使い方
+
+```{r}
+#| eval: false
+library(ksjdata)
+library(dplyr)
+
+files <- ksj_available |>
+  filter(dataset_code == "N03", year == 2026, prefecture_code == "13")
+ksj_get(files)
+```
+
+データは公開されたとおりに返します。ジオメトリと座標参照系は変更せず、コードの先頭の 0 も保ち、公開されている 0 と空欄（`NA`）は区別します。
+
+## 利用規約
+
+利用規約はデータセットごとに異なり、`ksj_available` の `license_*` 列と、セッションで初めてそのデータセットを取得したときに表示されます。商用利用できない（非商用）データセットもあります。データを公開・加工する場合は出典を記載し、加工した場合はその旨を記載する必要があります。
+
+- 利用規約は国土数値情報のサイトの記載をそのまま転記したもので、変更されることがあります。正式な内容はサイトのページ（`license_url` と `page_url`）を確認してください。
+- 同じデータセットでも、年や地域によって利用規約が異なる場合があります（古い年のデータは商用利用できない、地域ごとに独自の利用条件がある、など）。`license_name` はデータセット全体の表示なので、これらの条件は `license_note` で確認してください。
+- 利用規約を守る責任は利用者にあります。このパッケージは法的な助言をするものではありません。
+- このパッケージの MIT ライセンスはコードにだけ適用され、データには適用されません。
+
+## 対応しているデータセット
+
+```{r}
+#| echo: false
+#| message: false
+library(dplyr)
+
+ksjdata::ksj_available |>
+  summarise(
+    名称 = first(dataset_name),
+    年 = stringr::str_c(min(year), max(year), sep = "–"),
+    利用規約 = first(license_name),
+    .by = dataset_code
+  ) |>
+  arrange(dataset_code) |>
+  rename(コード = dataset_code) |>
+  knitr::kable()
+```

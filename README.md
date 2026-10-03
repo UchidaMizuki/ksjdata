@@ -1,0 +1,200 @@
+
+
+<!-- README.md is generated from README.qmd. Please edit that file -->
+
+# ksjdata
+
+English \| [日本語](README.ja.md)
+
+ksjdata provides National Land Numerical Information (国土数値情報,
+KSJ), published by the Ministry of Land, Infrastructure, Transport and
+Tourism of Japan.
+
+- `ksj_available` is the catalog: it lists every supported file, with
+  its dataset, release, area, and terms of use. Filter it to choose
+  files.
+- `ksj_get()` downloads and reads the files you choose, and returns them
+  as one `sf` tibble. Each file is cached by the
+  [tarchives](https://github.com/UchidaMizuki/tarchives) package, so it
+  is downloaded only once.
+- Columns are named in Japanese after the official attribute table. Use
+  `col_names = "raw"` to keep the names of the file (usually attribute
+  codes such as `N03_001`), for example for older releases.
+
+## Installation
+
+You can install the development version of ksjdata from GitHub with:
+
+``` r
+# install.packages("pak")
+pak::pak("UchidaMizuki/ksjdata")
+```
+
+## Usage
+
+``` r
+library(ksjdata)
+library(dplyr)
+
+files <- ksj_available |>
+  filter(dataset_code == "N03", year == 2026, prefecture_code == "13")
+ksj_get(files)
+```
+
+The data are returned as published: geometries and coordinate reference
+systems are not changed, codes keep their leading zeros, and published
+zeros stay distinct from blank cells (`NA`).
+
+## Terms of use
+
+Each dataset has its own terms, shown in the `license_*` columns of
+`ksj_available` and the first time the dataset is requested in a
+session. Some datasets cannot be used commercially (非商用). Published
+or processed data must credit the source, and processed data must say
+that they were processed.
+
+- The terms are copied from the KSJ site as published, and may change.
+  The pages of the site (`license_url` and `page_url`) are
+  authoritative.
+- Terms can differ by release or by area within a dataset (for example,
+  older releases of some datasets cannot be used commercially, and some
+  areas have their own conditions). `license_name` is the label of the
+  dataset as a whole; read `license_note` for these conditions.
+- Complying with the terms is up to you. This package does not give
+  legal advice.
+- The MIT license of this package applies to its code only, not to the
+  data.
+
+## Supported datasets
+
+| Code | Name | Releases | Terms |
+|:---|:---|:---|:---|
+| A03 | 三大都市圏計画区域データ | 2003–2025 | CC_BY_4.0 |
+| A09 | 都市地域データ | 2006–2018 | CC_BY_4.0 |
+| A10 | 自然公園地域データ | 2006–2015 | CC_BY_4.0（一部制限） |
+| A11 | 自然保全地域データ | 2006–2015 | CC_BY_4.0（一部制限） |
+| A12 | 農業地域データ | 2006–2015 | CC_BY_4.0（一部制限） |
+| A13 | 森林地域データ | 2006–2015 | CC_BY_4.0（一部制限） |
+| A15 | 鳥獣保護区データ | 2009–2015 | 非商用 |
+| A16 | 人口集中地区データ | 1960–2020 | 商用可 |
+| A17 | 過疎地域データ | 1970–2017 | 商用可 |
+| A18 | 半島振興対策実施地域データ | 1986–2016 | 商用可 |
+| A18s-a | 半島振興対策実施地域統計情報 | 1995–2010 | 非商用 |
+| A19 | 離島振興対策実施地域データ | 1953–2017 | 商用可 |
+| A19s | 離島振興対策実施地域統計情報 | 1995–2010 | 非商用 |
+| A20 | 奄美群島データ | 1954–2007 | 非商用 |
+| A20s | 奄美群島統計情報 | 1995–2010 | 非商用 |
+| A21 | 小笠原諸島データ | 1969–2007 | 非商用 |
+| A21s | 小笠原諸島統計情報 | 1995–2010 | 非商用 |
+| A22 | 豪雪地帯データ | 1963–2016 | 商用可 |
+| A22-m | 豪雪地帯（気象データ等） | 2014–2014 | 非商用 |
+| A22s | 豪雪地帯統計情報 | 1995–2010 | 非商用 |
+| A23 | 特殊土壌地帯データ | 1952–2016 | 商用可 |
+| A24 | 振興山村データ | 1966–2016 | 商用可 |
+| A25 | 特定農山村地域データ | 1993–2016 | 商用可 |
+| A27 | 小学校区データ | 2010–2023 | CC_BY_4.0（一部制限） |
+| A28 | 世界自然遺産データ | 2010–2022 | 非商用 |
+| A30a5 | 土砂災害・雪崩メッシュデータ | 2011–2011 | 商用可 |
+| A30b | 竜巻等の突風データ | 2011–2011 | 非商用 |
+| A31a | 洪水浸水想定区域データ | 2012–2025 | CC_BY_4.0 |
+| A31b | 洪水浸水想定区域（1次メッシュ単位）データ | 2022–2025 | CC_BY_4.0 |
+| A32 | 中学校区データ | 2013–2023 | CC_BY_4.0（一部制限） |
+| A33 | 土砂災害警戒区域データ | 2013–2025 | CC_BY_4.0（一部制限） |
+| A34 | 世界文化遺産データ | 2015–2022 | 非商用 |
+| A35a | 景観計画区域データ | 2014–2014 | 非商用 |
+| A35b | 景観地区・準景観地区データ | 2014–2014 | 非商用 |
+| A35c | 景観重要建造物・樹木データ | 2014–2014 | 非商用 |
+| A37 | 半島循環道路データ | 2015–2015 | 非商用 |
+| A38 | 医療圏データ | 2014–2020 | CC_BY_4.0 |
+| A39 | 密集市街地データ | 2015–2015 | 非商用 |
+| A40 | 津波浸水想定データ | 2016–2024 | CC_BY_4.0（一部制限） |
+| A42 | 歴史的風土保存区域データ | 2018–2018 | CC_BY_4.0 |
+| A43 | 伝統的建造物群保存地区データ | 2018–2018 | CC_BY_4.0 |
+| A44 | 歴史的風致維持向上計画の重点地区データ | 2018–2018 | CC_BY_4.0 |
+| A45 | 国有林野データ | 2018–2024 | CC_BY_4.0 |
+| A46 | 地すべり防止区域データ | 2020–2021 | CC_BY_4.0（一部制限） |
+| A47 | 急傾斜地崩壊危険区域データ | 2020–2021 | CC_BY_4.0（一部制限） |
+| A48 | 災害危険区域データ | 2020–2021 | CC_BY_4.0（一部制限） |
+| A49 | 高潮浸水想定区域データ | 2020–2024 | CC_BY_4.0（一部制限） |
+| A50 | 立地適正化計画区域データ | 2020–2020 | CC_BY_4.0（一部制限） |
+| A51 | 雨水出水（内水）浸水想定区域データ | 2024–2025 | CC_BY_4.0 |
+| A52 | 砂防指定地データ | 2023–2023 | CC_BY_4.0 |
+| A53 | 多段階浸水想定データ | 2023–2025 | CC_BY_4.0 |
+| A54 | 大規模盛土造成地データ | 2023–2023 | CC_BY_4.0 |
+| A56 | 宅地造成等工事規制区域・特定盛土等規制区域データ | 2025–2025 | CC_BY_4.0 |
+| C02 | 港湾データ | 2006–2014 | 非商用 |
+| C09 | 漁港データ | 2006–2006 | 非商用 |
+| C23 | 海岸線データ | 2006–2006 | 非商用 |
+| C28 | 空港データ | 2004–2021 | 商用可 |
+| G02 | 平年値メッシュデータ | 2012–2022 | 非商用 |
+| G04-a | 標高・傾斜度3次メッシュデータ | 2011–2011 | 商用可 |
+| G04-c | 標高・傾斜度4次メッシュデータ | 2011–2011 | 商用可 |
+| G04-d | 標高・傾斜度5次メッシュデータ | 2011–2011 | 商用可 |
+| G08 | 低位地帯データ | 2015–2015 | 商用可 |
+| L01 | 地価公示データ | 1983–2026 | CC_BY_4.0 |
+| L02 | 都道府県地価調査データ | 1983–2026 | CC_BY_4.0 |
+| L03-a | 土地利用3次メッシュデータ | 1976–2021 | CC_BY_4.0 |
+| L03-b | 土地利用細分メッシュデータ | 1976–2021 | CC_BY_4.0 |
+| L03-b-c | 土地利用詳細メッシュデータ | 2016–2021 | CC_BY_4.0 |
+| L03-b-u | 都市地域土地利用細分メッシュデータ | 2009–2021 | CC_BY_4.0 |
+| N02 | 鉄道データ | 2005–2025 | CC_BY_4.0 |
+| N03 | 行政区域データ | 1920–2026 | CC_BY_4.0 |
+| N04 | 道路密度・道路延長メッシュデータ | 1978–2010 | 非商用 |
+| N05 | 鉄道時系列データ | 2011–2025 | 非商用 |
+| N06 | 高速道路時系列データ | 2011–2025 | CC_BY_4.0（一部制限） |
+| N07 | バスルート | 2011–2022 | CC_BY_4.0 |
+| N08 | 空港時系列データ | 2011–2021 | 商用可 |
+| N09 | 定期旅客航路データ | 2012–2012 | 非商用 |
+| N10 | 緊急輸送道路 | 2013–2024 | 非商用 |
+| N11 | ヘリポート | 2013–2013 | 非商用 |
+| N12 | 重要物流道路 | 2021–2021 | 非商用 |
+| N13 | 道路データ | 2024–2024 | CC_BY_4.0 |
+| P02 | 公共施設データ | 1990–2006 | 非商用 |
+| P03 | 発電施設 | 1995–2013 | 非商用 |
+| P04 | 医療機関データ | 2010–2020 | CC_BY_4.0 |
+| P05 | 市町村役場等及び公的集会施設データ | 2010–2022 | CC_BY_4.0 |
+| P07 | 燃料給油所データ | 2010–2015 | 非商用 |
+| P09 | 宿泊容量メッシュデータ | 2010–2010 | 非商用 |
+| P11 | バス停留所データ | 2010–2022 | CC_BY_4.0 |
+| P12 | 観光資源データ | 2010–2014 | 非商用 |
+| P13 | 都市公園データ | 2011–2011 | 非商用 |
+| P14 | 福祉施設データ | 2011–2023 | CC_BY_4.0（一部制限） |
+| P15 | 廃棄物処理施設データ | 2012–2012 | 非商用 |
+| P16 | 研究機関データ | 2012–2012 | 非商用 |
+| P17 | 消防署データ | 2012–2012 | 非商用 |
+| P18 | 警察署データ | 2012–2012 | 非商用 |
+| P19 | 地域資源データ | 2012–2012 | 非商用 |
+| P20 | 避難施設データ | 2012–2012 | 非商用 |
+| P21 | 上水道関連施設データ | 2012–2012 | 非商用 |
+| P22 | 下水道関連施設データ | 2012–2012 | 非商用 |
+| P23 | 海岸保全施設データ | 2012–2012 | 非商用 |
+| P24 | 地場産業関連施設データ | 2012–2012 | 非商用 |
+| P26 | ニュータウンデータ | 2013–2013 | 非商用 |
+| P27 | 文化施設データ | 2013–2013 | 非商用 |
+| P28 | 国・都道府県の機関データ | 2013–2022 | 非商用 |
+| P29 | 学校データ | 2013–2023 | CC_BY_4.0 |
+| P30 | 郵便局データ | 2013–2013 | 非商用 |
+| P31 | 物流拠点 | 2013–2013 | 非商用 |
+| P32 | 都道府県指定文化財データ | 2014–2014 | 非商用 |
+| P33 | 集客施設データ | 2014–2014 | 非商用 |
+| P34 | 市区町村役場データ | 2014–2014 | 非商用 |
+| P35 | 道の駅データ | 2018–2018 | 非商用 |
+| P36 | 高速バス停留所データ | 2023–2023 | CC_BY_4.0 |
+| S05-a | 交通流動量 パーソントリップ発生・集中量データ | 2010–2013 | 非商用 |
+| S05-b | 交通流動量 パーソントリップOD量データ | 2010–2013 | 非商用 |
+| S05-c | 交通流動量 駅別乗降数データ | 2010–2012 | 非商用 |
+| S05-d | 交通流動量 貨物・旅客地域流動量データ | 2001–2018 | 商用可 |
+| S10a | 港湾間流通量・海上経路データ | 2011–2016 | 商用可 |
+| S10b | 空港間流通量 | 2011–2014 | 非商用 |
+| S12 | 駅別乗降客数データ | 2011–2024 | CC_BY_4.0 |
+| W01 | ダムデータ | 2005–2014 | 非商用 |
+| W05 | 河川データ | 2006–2009 | 非商用 |
+| W07 | 流域メッシュデータ | 2009–2009 | 非商用 |
+| W09 | 湖沼データ | 2005–2005 | 商用可 |
+| mesh1000 | 1kmメッシュ別将来推計人口データ（H29国政局推計）（shape形式版） | 2017–2017 | CC_BY_4.0 |
+| mesh1000h30 | 1kmメッシュ別将来推計人口データ（H30国政局推計）（shape形式版） | 2018–2018 | CC_BY_4.0 |
+| mesh1000r6 | 1kmメッシュ別将来推計人口データ（R6国政局推計） | 2024–2024 | CC_BY_4.0 |
+| mesh250r6 | 250mメッシュ別将来推計人口データ（R6国政局推計） | 2024–2024 | CC_BY_4.0 |
+| mesh500 | 500mメッシュ別将来推計人口データ（H29国政局推計）（shape形式版） | 2017–2017 | CC_BY_4.0 |
+| mesh500h30 | 500mメッシュ別将来推計人口データ（H30国政局推計）（shape形式版） | 2018–2018 | CC_BY_4.0 |
+| mesh500r6 | 500mメッシュ別将来推計人口データ（R6国政局推計） | 2024–2024 | CC_BY_4.0 |

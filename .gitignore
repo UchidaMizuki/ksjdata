@@ -1,0 +1,32 @@
+# RStudio and Positron
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.positron
+
+# Secrets
+.Renviron
+.env
+.httr-oauth
+
+# Quarto and rendered files that are not part of the package
+/.quarto/
+**/*.quarto_ipynb
+README.html
+README.ja.html
+README_files
+README.ja_files
+docs
+inst/doc
+
+# Built packages and check results
+*.tar.gz
+*.Rcheck
+
+# targets stores created while developing pipelines
+_targets
+
+# Operating systems
+.DS_Store
+Thumbs.db

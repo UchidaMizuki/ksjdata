@@ -1,0 +1,44 @@
+Package: ksjdata
+Title: National Land Numerical Information of Japan
+Version: 0.0.0.9000
+Authors@R:
+    person("Mizuki", "Uchida", , "uchidamizuki@vivaldi.net", role = c("aut", "cre"))
+Description: Provides National Land Numerical Information (Kokudo
+    Suuchi Joho) published by the Ministry of Land, Infrastructure,
+    Transport and Tourism of Japan. A bundled catalog lists every
+    downloadable file with its terms of use; the selected files are
+    downloaded and read on demand by 'targets' pipelines bundled with
+    the package, and cached via 'tarchives'. Attributes are named after
+    the official attribute table and product specifications.
+License: MIT + file LICENSE
+URL: https://github.com/UchidaMizuki/ksjdata
+BugReports: https://github.com/UchidaMizuki/ksjdata/issues
+Depends:
+    R (>= 4.1.0)
+Imports:
+    cli,
+    fs,
+    rlang (>= 1.1.0),
+    sf,
+    stringr,
+    tarchives (>= 0.2.0.9000),
+    targets,
+    tibble,
+    units,
+    vctrs
+Suggests:
+    curl,
+    dplyr,
+    purrr,
+    readr,
+    tarchetypes,
+    testthat (>= 3.0.0),
+    withr,
+    zip
+Remotes:
+    UchidaMizuki/tarchives
+Config/testthat/edition: 3
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 8.0.0

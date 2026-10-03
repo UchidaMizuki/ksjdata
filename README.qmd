@@ -1,0 +1,70 @@
+---
+format: gfm
+knitr:
+  opts_chunk:
+    collapse: true
+    comment: "#>"
+---
+
+<!-- README.md is generated from README.qmd. Please edit that file -->
+
+# ksjdata
+
+English | [日本語](README.ja.md)
+
+ksjdata provides National Land Numerical Information (国土数値情報, KSJ), published by the Ministry of Land, Infrastructure, Transport and Tourism of Japan.
+
+- `ksj_available` is the catalog: it lists every supported file, with its dataset, release, area, and terms of use. Filter it to choose files.
+- `ksj_get()` downloads and reads the files you choose, and returns them as one `sf` tibble. Each file is cached by the [tarchives](https://github.com/UchidaMizuki/tarchives) package, so it is downloaded only once.
+- Columns are named in Japanese after the official attribute table. Use `col_names = "raw"` to keep the names of the file (usually attribute codes such as `N03_001`), for example for older releases.
+
+## Installation
+
+You can install the development version of ksjdata from GitHub with:
+
+``` r
+# install.packages("pak")
+pak::pak("UchidaMizuki/ksjdata")
+```
+
+## Usage
+
+```{r}
+#| eval: false
+library(ksjdata)
+library(dplyr)
+
+files <- ksj_available |>
+  filter(dataset_code == "N03", year == 2026, prefecture_code == "13")
+ksj_get(files)
+```
+
+The data are returned as published: geometries and coordinate reference systems are not changed, codes keep their leading zeros, and published zeros stay distinct from blank cells (`NA`).
+
+## Terms of use
+
+Each dataset has its own terms, shown in the `license_*` columns of `ksj_available` and the first time the dataset is requested in a session. Some datasets cannot be used commercially (非商用). Published or processed data must credit the source, and processed data must say that they were processed.
+
+- The terms are copied from the KSJ site as published, and may change. The pages of the site (`license_url` and `page_url`) are authoritative.
+- Terms can differ by release or by area within a dataset (for example, older releases of some datasets cannot be used commercially, and some areas have their own conditions). `license_name` is the label of the dataset as a whole; read `license_note` for these conditions.
+- Complying with the terms is up to you. This package does not give legal advice.
+- The MIT license of this package applies to its code only, not to the data.
+
+## Supported datasets
+
+```{r}
+#| echo: false
+#| message: false
+library(dplyr)
+
+ksjdata::ksj_available |>
+  summarise(
+    Name = first(dataset_name),
+    Releases = stringr::str_c(min(year), max(year), sep = "–"),
+    Terms = first(license_name),
+    .by = dataset_code
+  ) |>
+  arrange(dataset_code) |>
+  rename(Code = dataset_code) |>
+  knitr::kable()
+```

@@ -1,0 +1,17 @@
+^ksjdata\.Rproj$
+^\.Rproj\.user$
+^AGENTS\.md$
+^\.claude$
+^ARCHITECTURE\.md$
+^LICENSE\.md$
+^data-raw$
+^README\.qmd$
+^README\.ja\.qmd$
+^README\.ja\.md$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^\.gitattributes$
+^[.]?air[.]toml$
+^\.vscode$
+^\.quarto$

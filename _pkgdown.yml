@@ -1,0 +1,12 @@
+template:
+  bootstrap: 5
+
+reference:
+- title: Data
+  contents:
+  - ksj_available
+  - ksj_attributes
+  - ksj_get
+- title: Targets
+  contents:
+  - ksj_target

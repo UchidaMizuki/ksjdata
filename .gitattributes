@@ -1,0 +1,6 @@
+# Keep line endings LF on every platform.
+* text=auto eol=lf
+
+# Binary files: data objects and test archives.
+*.rda binary
+*.zip binary
