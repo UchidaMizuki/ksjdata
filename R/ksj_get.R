@@ -48,7 +48,7 @@ ksj_get <- function(file_name, layer = NULL, col_names = c("ja", "raw")) {
   file <- ksj_find_file(file_name)
   ksj_inform_terms(file)
 
-  layers <- ksj_read_target(file$dataset_code, file$file_name)
+  layers <- ksj_read_target(file)
   name <- ksj_select_layer(layers, file, layer)
   data <- layers[[name]]
   if (col_names == "ja") {
@@ -58,11 +58,31 @@ ksj_get <- function(file_name, layer = NULL, col_names = c("ja", "raw")) {
 }
 
 # Builds the target of a file, if needed, and returns its named list of layers.
-ksj_read_target <- function(dataset_code, file_name) {
+# The target keeps the URL it was built from, so that the data of another file
+# are never returned.
+ksj_read_target <- function(file, call = rlang::caller_env()) {
+  value <- ksj_get_archive(
+    ksj_target_name(file$file_name),
+    stringr::str_to_lower(file$dataset_code)
+  )
+  if (!identical(value$url, file$url)) {
+    cli::cli_abort(
+      c(
+        "The cached data of {.file {file$file_name}} are not from its URL in {.code ksj_available}.",
+        i = "Restart R to rebuild them, for example after reinstalling ksjdata."
+      ),
+      class = "ksjdata_error_target",
+      call = call
+    )
+  }
+  value$layers
+}
+
+ksj_get_archive <- function(name, pipeline) {
   tarchives::tar_get_archive_raw(
-    name = ksj_target_name(file_name),
+    name = name,
     package = "ksjdata",
-    pipeline = stringr::str_to_lower(dataset_code)
+    pipeline = pipeline
   )
 }
 

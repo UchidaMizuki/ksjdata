@@ -83,9 +83,10 @@ test_that("ksj_build_file() downloads and reads an archive", {
   path <- fs::path_abs(test_path("fixtures", "geojson.zip"))
   url <- stringr::str_c("file://", if (!startsWith(path, "/")) "/", path)
 
-  layers <- helpers$ksj_build_file(url, 0.01)
+  value <- helpers$ksj_build_file(url, 0.01)
 
-  expect_named(layers, "N03-20250101_13")
+  expect_equal(value$url, url)
+  expect_named(value$layers, "N03-20250101_13")
 })
 
 test_that("every pipeline has one target per file of its dataset", {

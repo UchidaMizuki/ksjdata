@@ -20,13 +20,20 @@ test_that("every pipeline has files, and every file has a pipeline", {
   )
 })
 
-test_that("file names and target names are unique", {
-  expect_equal(anyDuplicated(ksj_available$file_name), 0)
-  targets <- tibble::tibble(
-    dataset_code = ksj_available$dataset_code,
-    name = ksj_target_name(ksj_available$file_name)
+test_that("every file is identified by its name", {
+  expect_no_error(ksj_check_files(ksj_available))
+})
+
+test_that("ksj_check_files() errors on names that don't identify a file", {
+  url <- "https://nlftp.mlit.go.jp/ksj/gml/data/N03/"
+  files <- tibble::tibble(
+    file_name = c("A.zip", "A.zip", "B-1.zip", "B_1.zip", "C.zip"),
+    url = stringr::str_c(
+      url,
+      c("A.zip", "A.zip", "B-1.zip", "B_1.zip", "D.zip")
+    )
   )
-  expect_equal(anyDuplicated(targets), 0)
+  expect_snapshot(ksj_check_files(files), error = TRUE)
 })
 
 test_that("every release has a year", {

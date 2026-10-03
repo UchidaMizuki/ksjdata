@@ -64,6 +64,7 @@ ksj_available_impl <- function(dir = "data-raw") {
     vctrs::vec_match(files$dataset_code, datasets$dataset_code),
   ]
 
+  ksj_check_files(files)
   tibble(
     files["dataset_code"],
     dataset[c("dataset_name", "category_name")],
@@ -85,6 +86,26 @@ ksj_available_impl <- function(dir = "data-raw") {
       "specification_url"
     )]
   )
+}
+
+# A file name must identify one file and one target: `ksj_get()` finds a file
+# by its name and reads the target named after it. The name must also be the
+# name of the archive at the URL, so that it never points to another file.
+ksj_check_files <- function(files) {
+  targets <- ksj_target_name(files$file_name)
+  wrong <- vctrs::vec_duplicate_detect(files$file_name) |
+    vctrs::vec_duplicate_detect(targets) |
+    files$file_name != fs::path_file(files$url)
+  if (any(wrong)) {
+    cli::cli_abort(
+      c(
+        "Each file must have a unique name and target name, and be named after its URL.",
+        x = "Files that are not: {.file {unique(files$file_name[wrong])}}."
+      ),
+      class = "ksjdata_error_catalog"
+    )
+  }
+  invisible(files)
 }
 
 read_scraped <- function(path, col_types) {

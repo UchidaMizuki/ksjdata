@@ -52,3 +52,12 @@
       Error in `ksj_get()`:
       ! `layer` must be a single string or `NULL`, not the number 1.
 
+# ksj_get() errors on cached data that are not from the file's URL
+
+    Code
+      ksj_get(file$file_name)
+    Condition
+      Error in `ksj_get()`:
+      ! The cached data of 'N03-20260101_13_GML.zip' are not from its URL in `ksj_available`.
+      i Restart R to rebuild them, for example after reinstalling ksjdata.
+

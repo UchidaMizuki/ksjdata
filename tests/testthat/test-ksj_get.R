@@ -129,3 +129,25 @@ test_that("ksj_layer_regex() replaces the placeholders by digits", {
   expect_no_match("N03-200101_13", ksj_layer_regex("N03-YYYYMMDD_PP.shp"))
   expect_no_match("A03-25xSYUTO", ksj_layer_regex("A03-YY.SYUTO.shp"))
 })
+
+test_that("ksj_get() reads the target named after the file", {
+  file <- named_file()$file
+  local_mocked_bindings(ksj_get_archive = function(name, pipeline) {
+    list(url = file$url, layers = list(name = name, pipeline = pipeline))
+  })
+
+  expect_equal(
+    ksj_read_target(file),
+    list(name = ksj_target_name(file$file_name), pipeline = "n03")
+  )
+})
+
+test_that("ksj_get() errors on cached data that are not from the file's URL", {
+  local_quiet_terms()
+  file <- named_file()$file
+  local_mocked_bindings(ksj_get_archive = function(...) {
+    list(url = "https://nlftp.mlit.go.jp/ksj/gml/data/N03/other.zip")
+  })
+
+  expect_snapshot(ksj_get(file$file_name), error = TRUE)
+})

@@ -18,14 +18,15 @@ ksj_pipeline <- function(code) {
 }
 
 # Downloads an archive to a temporary directory and reads its layers. The
-# archive is not kept. `file_size` is unused: it is an argument so that the
+# archive is not kept. The value keeps the URL, which `ksj_get()` checks
+# against `ksj_available`. `file_size` is unused: it is an argument so that the
 # published size is part of the command.
 ksj_build_file <- function(url, file_size) {
   dir <- fs::dir_create(fs::file_temp("ksjdata"))
   on.exit(fs::dir_delete(dir), add = TRUE)
   archive <- fs::path(dir, "archive.zip")
   curl::curl_download(url, archive, quiet = TRUE)
-  ksj_read_archive(archive, fs::path(dir, "files"))
+  list(url = url, layers = ksj_read_archive(archive, fs::path(dir, "files")))
 }
 
 # Named list of the layers of an archive, with the column names of the files.
@@ -73,12 +74,14 @@ ksj_layer_paths <- function(dir) {
   unname(sort(paths))
 }
 
-# Member names may use backslashes as separators.
+# Member names may use backslashes as separators, which fs treats as
+# separators on Windows only, so they are replaced first.
 ksj_layer_names <- function(paths) {
-  names <- stringr::str_remove(
-    fs::path_ext_remove(fs::path_file(paths)),
-    "^.*\\\\"
-  )
+  names <- paths |>
+    stringr::str_replace_all(stringr::fixed("\\"), "/") |>
+    fs::path_file() |>
+    fs::path_ext_remove() |>
+    as.character()
   duplicated <- unique(names[duplicated(names)])
   if (length(duplicated) > 0) {
     rlang::abort(
