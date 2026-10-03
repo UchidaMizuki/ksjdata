@@ -206,13 +206,17 @@ added as they are needed, not all at once.
 
 ### Updating the catalog
 
-The catalog is updated by running `data-raw/update.R` and releasing a
-new version of the package. It is not needed for every version: only to
-take in changes of the site (new releases, moved files) or of the
-supported datasets. The diffs of the CSV files and the report of the
-scripts show what MLIT added, removed, or replaced. A file whose row
-changed (URL or size) is rebuilt the next time it is requested; other
-files keep their cached data.
+The catalog is updated by running `data-raw/update.R`, weekly by the
+workflow `update-catalog.yaml`, which opens a pull request when the
+files changed and runs R CMD check on it. Users take in the update by
+installing the package again. The data objects stay `.rda` files, the
+standard of R packages: the diffs are reviewed in the CSV files of
+`data-raw/`, and the `.rda` files are small (about 150 kB in all). An
+update is not needed for every version: only to take in changes of the
+site (new releases, moved files) or of the supported datasets. The diffs
+of the CSV files and the report of the scripts show what MLIT added,
+removed, or replaced. A file whose row changed (URL or size) is rebuilt
+the next time it is requested; other files keep their cached data.
 
 ## Names
 
@@ -302,9 +306,16 @@ name of one file, a value of `file_name` in `ksj_available` (for example
   are got by iterating over their names
   (`purrr::map(files$file_name, ksj_get)`), and bound by the user when
   their layouts agree.
-- `file_name` is the key: file names are unique across `ksj_available`
-  (a test checks it), so the dataset is not needed. A name that is not
-  in it is an error.
+- `file_name` is the key: file names are unique across `ksj_available`,
+  so the dataset is not needed. A name that is not in it is an error.
+- A file is never mixed up with another. `ksj_available_impl()` stops
+  the build unless every file name is unique, gives a unique target
+  name, and is the name of the archive at its URL. The value of a target
+  keeps the URL it was downloaded from, and
+  [`ksj_get()`](https://uchidamizuki.github.io/ksjdata/reference/ksj_get.md)
+  errors unless it is the URL of the file in `ksj_available` (for
+  example, a stale cache after reinstalling the same version in a
+  session).
 - Only the target of the requested file is built, so only that file is
   downloaded. It is got with
   [`tarchives::tar_get_archive_raw()`](https://uchidamizuki.github.io/tarchives/reference/tar_get_archive.html),
@@ -351,8 +362,10 @@ which substitutes the values before the targets are created (`tar_map()`
 substitutes only into commands of targets already created, so it cannot
 pass a file name to
 [`ksj_target()`](https://uchidamizuki.github.io/ksjdata/reference/ksj_target.md)).
-The installed version of ksjdata is part of the target’s string, so a
-new version reruns it.
+The URL and the size of the file in `ksj_available` and the installed
+version of ksjdata are part of the target’s string, so the target is
+rerun when an update of the catalog replaces the file or when a new
+version is installed.
 
 Values:
 
@@ -537,8 +550,11 @@ duckdb spatial before switching.
   `usethis::use_air()`).
 - GitHub Actions run R CMD check on the r-lib matrix
   (`R-CMD-check.yaml`), check the formatting with Air
-  (`format-check.yaml`), and build the pkgdown site to the `gh-pages`
-  branch (`pkgdown.yaml`). The workflows come from
+  (`format-check.yaml`), build the pkgdown site to the `gh-pages` branch
+  (`pkgdown.yaml`), and update the catalog weekly
+  (`update-catalog.yaml`). Pull requests opened with `GITHUB_TOKEN` do
+  not trigger workflows, so `update-catalog.yaml` dispatches
+  `R-CMD-check.yaml` on its branch. The workflows come from
   `usethis::use_github_action()` and the examples of
   `posit-dev/setup-air`.
 - `Suggests`: packages used only inside the pipelines (`curl`, `purrr`,

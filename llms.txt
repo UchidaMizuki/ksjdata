@@ -32,6 +32,9 @@ pak::pak("UchidaMizuki/ksjdata")
 
 ## Usage
 
+Filter `ksj_available` to find files. Each row is one file, identified
+by its `file_name` (the name of the archive on the KSJ download site).
+
 ``` r
 
 library(ksjdata)
@@ -43,11 +46,53 @@ files <- ksj_available |>
     year == 2026,
     prefecture_code %in% c("13", "14")
   )
+files |>
+  select(dataset_name, year_name, area_name, file_name, file_size)
+#> # A tibble: 2 × 5
+#>   dataset_name   year_name         area_name file_name                 file_size
+#>   <chr>          <chr>             <chr>     <chr>                   <fs::bytes>
+#> 1 行政区域データ 2026年（令和8年） 東京      N03-20260101_13_GML.zip      11.96M
+#> 2 行政区域データ 2026年（令和8年） 神奈川    N03-20260101_14_GML.zip       4.88M
+```
 
-# One file
+Pass a `file_name` to
+[`ksj_get()`](https://uchidamizuki.github.io/ksjdata/reference/ksj_get.md)
+to get that file. The terms of use are shown the first time a dataset is
+requested in a session.
+
+``` r
+
 ksj_get("N03-20260101_13_GML.zip")
+#> Terms of use of N03 (行政区域データ): CC_BY_4.0
+#> ℹ オープンデータ（CC_BY_4.0）
+#> ℹ <https://nlftp.mlit.go.jp/ksj/other/agreement_01.html>
+#> This message is displayed once per session.
+#> Simple feature collection with 6904 features and 6 fields
+#> Geometry type: POLYGON
+#> Dimension:     XY
+#> Bounding box:  xmin: 136.0695 ymin: 20.42275 xmax: 153.9867 ymax: 35.89842
+#> Geodetic CRS:  JGD2011
+#> # A tibble: 6,904 × 7
+#>    都道府県名 北海道の振興局名 群名  市区町村名 政令指定都市の行政区域名
+#>    <chr>      <chr>            <chr> <chr>      <chr>                   
+#>  1 東京都     <NA>             <NA>  所属未定地 <NA>                    
+#>  2 東京都     <NA>             <NA>  所属未定地 <NA>                    
+#>  3 東京都     <NA>             <NA>  所属未定地 <NA>                    
+#>  4 東京都     <NA>             <NA>  所属未定地 <NA>                    
+#>  5 東京都     <NA>             <NA>  所属未定地 <NA>                    
+#>  6 東京都     <NA>             <NA>  所属未定地 <NA>                    
+#>  7 東京都     <NA>             <NA>  所属未定地 <NA>                    
+#>  8 東京都     <NA>             <NA>  所属未定地 <NA>                    
+#>  9 東京都     <NA>             <NA>  所属未定地 <NA>                    
+#> 10 東京都     <NA>             <NA>  所属未定地 <NA>                    
+#> # ℹ 6,894 more rows
+#> # ℹ 2 more variables: 全国地方公共団体コード <chr>, geometry <POLYGON [°]>
+```
 
-# Several files
+To get several files, iterate over their names:
+
+``` r
+
 purrr::map(files$file_name, ksj_get)
 ```
 

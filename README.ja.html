@@ -52,6 +52,7 @@
 </div>
 <div class="section level2">
 <h2 id="使い方">使い方<a class="anchor" aria-label="anchor" href="#%E4%BD%BF%E3%81%84%E6%96%B9"></a></h2>
+<p><code>ksj_available</code> を絞り込んでファイルを探します。各行が 1 つのファイルで、<code>file_name</code>（国土数値情報のダウンロードサイトでのファイル名）で識別します。</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/UchidaMizuki/ksjdata" class="external-link">ksjdata</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
@@ -62,14 +63,45 @@
 <span>    <span class="va">year</span> <span class="op">==</span> <span class="fl">2026</span>,</span>
 <span>    <span class="va">prefecture_code</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"13"</span>, <span class="st">"14"</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 1 つのファイル</span></span>
-<span><span class="fu"><a href="reference/ksj_get.html">ksj_get</a></span><span class="op">(</span><span class="st">"N03-20260101_13_GML.zip"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 複数のファイル</span></span>
-<span><span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map</a></span><span class="op">(</span><span class="va">files</span><span class="op">$</span><span class="va">file_name</span>, <span class="va">ksj_get</span><span class="op">)</span></span></code></pre></div>
-<p><a href="https://docs.ropensci.org/targets/" class="external-link">targets</a> のパイプラインでは、<code><a href="reference/ksj_target.html">ksj_target()</a></code> で 1 つのファイルを取得するターゲットを宣言します。ファイルごとに宣言するには <code><a href="https://docs.ropensci.org/tarchetypes/reference/tar_eval.html" class="external-link">tarchetypes::tar_eval()</a></code> を使います。</p>
+<span><span class="va">files</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">dataset_name</span>, <span class="va">year_name</span>, <span class="va">area_name</span>, <span class="va">file_name</span>, <span class="va">file_size</span><span class="op">)</span></span>
+<span><span class="co">#&gt; # A tibble: 2 × 5</span></span>
+<span><span class="co">#&gt;   dataset_name   year_name         area_name file_name                 file_size</span></span>
+<span><span class="co">#&gt;   &lt;chr&gt;          &lt;chr&gt;             &lt;chr&gt;     &lt;chr&gt;                   &lt;fs::bytes&gt;</span></span>
+<span><span class="co">#&gt; 1 行政区域データ 2026年（令和8年） 東京      N03-20260101_13_GML.zip      11.96M</span></span>
+<span><span class="co">#&gt; 2 行政区域データ 2026年（令和8年） 神奈川    N03-20260101_14_GML.zip       4.88M</span></span></code></pre></div>
+<p><code>file_name</code> を <code><a href="reference/ksj_get.html">ksj_get()</a></code> に渡すと、そのファイルを取得します。利用規約は、セッションで初めてそのデータセットを取得したときに表示されます。</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/ksj_get.html">ksj_get</a></span><span class="op">(</span><span class="st">"N03-20260101_13_GML.zip"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Terms of use of N03 (行政区域データ): CC_BY_4.0</span></span>
+<span><span class="co">#&gt; ℹ オープンデータ（CC_BY_4.0）</span></span>
+<span><span class="co">#&gt; ℹ &lt;https://nlftp.mlit.go.jp/ksj/other/agreement_01.html&gt;</span></span>
+<span><span class="co">#&gt; This message is displayed once per session.</span></span>
+<span><span class="co">#&gt; Simple feature collection with 6904 features and 6 fields</span></span>
+<span><span class="co">#&gt; Geometry type: POLYGON</span></span>
+<span><span class="co">#&gt; Dimension:     XY</span></span>
+<span><span class="co">#&gt; Bounding box:  xmin: 136.0695 ymin: 20.42275 xmax: 153.9867 ymax: 35.89842</span></span>
+<span><span class="co">#&gt; Geodetic CRS:  JGD2011</span></span>
+<span><span class="co">#&gt; # A tibble: 6,904 × 7</span></span>
+<span><span class="co">#&gt;    都道府県名 北海道の振興局名 群名  市区町村名 政令指定都市の行政区域名</span></span>
+<span><span class="co">#&gt;    &lt;chr&gt;      &lt;chr&gt;            &lt;chr&gt; &lt;chr&gt;      &lt;chr&gt;                   </span></span>
+<span><span class="co">#&gt;  1 東京都     &lt;NA&gt;             &lt;NA&gt;  所属未定地 &lt;NA&gt;                    </span></span>
+<span><span class="co">#&gt;  2 東京都     &lt;NA&gt;             &lt;NA&gt;  所属未定地 &lt;NA&gt;                    </span></span>
+<span><span class="co">#&gt;  3 東京都     &lt;NA&gt;             &lt;NA&gt;  所属未定地 &lt;NA&gt;                    </span></span>
+<span><span class="co">#&gt;  4 東京都     &lt;NA&gt;             &lt;NA&gt;  所属未定地 &lt;NA&gt;                    </span></span>
+<span><span class="co">#&gt;  5 東京都     &lt;NA&gt;             &lt;NA&gt;  所属未定地 &lt;NA&gt;                    </span></span>
+<span><span class="co">#&gt;  6 東京都     &lt;NA&gt;             &lt;NA&gt;  所属未定地 &lt;NA&gt;                    </span></span>
+<span><span class="co">#&gt;  7 東京都     &lt;NA&gt;             &lt;NA&gt;  所属未定地 &lt;NA&gt;                    </span></span>
+<span><span class="co">#&gt;  8 東京都     &lt;NA&gt;             &lt;NA&gt;  所属未定地 &lt;NA&gt;                    </span></span>
+<span><span class="co">#&gt;  9 東京都     &lt;NA&gt;             &lt;NA&gt;  所属未定地 &lt;NA&gt;                    </span></span>
+<span><span class="co">#&gt; 10 東京都     &lt;NA&gt;             &lt;NA&gt;  所属未定地 &lt;NA&gt;                    </span></span>
+<span><span class="co">#&gt; # ℹ 6,894 more rows</span></span>
+<span><span class="co">#&gt; # ℹ 2 more variables: 全国地方公共団体コード &lt;chr&gt;, geometry &lt;POLYGON [°]&gt;</span></span></code></pre></div>
+<p>複数のファイルは、ファイル名ごとに取得します。</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map</a></span><span class="op">(</span><span class="va">files</span><span class="op">$</span><span class="va">file_name</span>, <span class="va">ksj_get</span><span class="op">)</span></span></code></pre></div>
+<p><a href="https://docs.ropensci.org/targets/" class="external-link">targets</a> のパイプラインでは、<code><a href="reference/ksj_target.html">ksj_target()</a></code> で 1 つのファイルを取得するターゲットを宣言します。ファイルごとに宣言するには <code><a href="https://docs.ropensci.org/tarchetypes/reference/tar_eval.html" class="external-link">tarchetypes::tar_eval()</a></code> を使います。</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">tarchetypes</span><span class="fu">::</span><span class="fu"><a href="https://docs.ropensci.org/tarchetypes/reference/tar_eval.html" class="external-link">tar_eval</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="reference/ksj_target.html">ksj_target</a></span><span class="op">(</span><span class="va">name</span>, <span class="va">file_name</span><span class="op">)</span>,</span>
 <span>  values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>

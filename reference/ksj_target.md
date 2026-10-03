@@ -2,8 +2,10 @@
 
 `ksj_target()` and `ksj_target_raw()` declare a target of a 'targets'
 pipeline whose value is `ksj_get(file_name, layer, col_names)`. The
-target is rerun when the arguments or the installed version of ksjdata
-change. To declare a target per file, use
+target is rerun when the arguments, the URL or the size of the file in
+[ksj_available](https://uchidamizuki.github.io/ksjdata/reference/ksj_available.md),
+or the installed version of ksjdata change. To declare a target per
+file, use
 [`tarchetypes::tar_eval()`](https://docs.ropensci.org/tarchetypes/reference/tar_eval.html).
 
 ## Usage
@@ -65,7 +67,10 @@ ksj_target(municipalities, "N03-20260101_13_GML.zip")
 #>   description:  
 #>   command:
 #>     ksjdata::ksj_get(file_name = "N03-20260101_13_GML.zip", layer = NULL, 
-#>         col_names = "ja")0.0.0.9000 
+#>         col_names = "ja")
+#>     https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_13_GML.zip
+#>     12540000
+#>     0.0.0.9000 
 #>   format: rds 
 #>   repository: local 
 #>   iteration method: vector 
@@ -117,7 +122,10 @@ tarchetypes::tar_eval(
 #>   description:  
 #>   command:
 #>     ksjdata::ksj_get(file_name = "N03-20260101_13_GML.zip", layer = NULL, 
-#>         col_names = "ja")0.0.0.9000 
+#>         col_names = "ja")
+#>     https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_13_GML.zip
+#>     12540000
+#>     0.0.0.9000 
 #>   format: rds 
 #>   repository: local 
 #>   iteration method: vector 
@@ -155,7 +163,10 @@ tarchetypes::tar_eval(
 #>   description:  
 #>   command:
 #>     ksjdata::ksj_get(file_name = "N03-20260101_14_GML.zip", layer = NULL, 
-#>         col_names = "ja")0.0.0.9000 
+#>         col_names = "ja")
+#>     https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_14_GML.zip
+#>     5120000
+#>     0.0.0.9000 
 #>   format: rds 
 #>   repository: local 
 #>   iteration method: vector 
