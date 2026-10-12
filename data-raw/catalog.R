@@ -76,7 +76,7 @@ read_index <- function(url) {
   html |>
     html_elements("ul.collapsible") |>
     purrr::map(\(category) read_category(category, url)) |>
-    list_rbind() |>
+    purrr::list_rbind() |>
     filter(str_detect(page_url, "/datalist/")) |>
     distinct(page_url, .keep_all = TRUE)
 }

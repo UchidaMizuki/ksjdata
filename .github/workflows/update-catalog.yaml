@@ -34,6 +34,9 @@ jobs:
             any::tidyr
 
       - name: Update
+        # `shell: bash` sets pipefail, so a failure of the script fails the step
+        # instead of being hidden by `tee`.
+        shell: bash
         run: Rscript data-raw/update.R 2>&1 | tee "$RUNNER_TEMP/report.txt"
 
       - name: Write the body of the pull request

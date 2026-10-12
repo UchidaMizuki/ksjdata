@@ -44,7 +44,7 @@ read_attribute_table <- function(url) {
   path <- tempfile(fileext = ".xlsx")
   curl::curl_download(url, path)
   readxl::read_excel(path, sheet = "全データ", skip = 3, col_types = "text") |>
-    set_names(c(
+    rlang::set_names(c(
       "category_name",
       "subcategory_name",
       "feature_name",
