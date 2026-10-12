@@ -131,6 +131,19 @@ English names would come from the product specification of each dataset (`specif
 - A layer would get English names only if every attribute is matched to one feature of the specification and the names are unique within it.
 - `ksj_attributes` would gain `feature_name_en` and `attribute_name_en`, and `col_names` would gain `"en"`, without breaking existing code.
 
+### Code lists (planned)
+
+Many attributes hold codes from a code list (コードリスト) published by KSJ: `A29_004` holds the codes of 用途地域分類コード (`UseDistrictCd.html`), and `A29_001` those of 行政区域コード (`AdminiBoundary_CD.xlsx`). The dataset page links each such attribute to its code list. The code lists would be shipped as data, and codes would not be replaced by names in `ksj_get()`.
+
+- Codes stay as published (see [Output](#output)). Names can be added from codes at any time, but replaced codes cannot be recovered.
+- A code list has no versions. KSJ publishes one list that is extended over time: `UseDistrictCd` lists 田園住居地域 (`21`), which was added in 2018, with no note of the releases that use it. Whether the current list describes an older release cannot be checked, so the package does not decide it for the user.
+- `ksj_codelists` would be a data object with one row per code: `codelist_id` (the name of the list's file without the extension, `UseDistrictCd`), `codelist_name` (用途地域分類コード), `code`, and `code_name` (第一種低層住居専用地域), all as published. It would be scraped by `data-raw/update.R` into `data-raw/codelists.csv`, so every change of a list is reviewed as a diff, and computed by `ksj_codelists_impl()` like the other data objects.
+- `ksj_attributes` would gain `codelist_id`, taken from the links of the dataset page, so users add names with a join. A link is kept only if the code of the attribute on the page is in the attribute table and the list is in `ksj_codelists`; `data-raw/build.R` reports the others.
+- A function that adds names would be added only when it is needed. It would apply the same checks as `col_names = "ja"`: the release of the file has the `year` of the attribute table, and every code of the column is in the list. Otherwise it would be an error. It would add a column next to the codes rather than replace them.
+- If a code of a list turns out to mean different things in different releases, that list is dropped from `ksj_codelists`, since the checks above cannot detect it.
+
+Codes that change over time for the same thing, such as the administrative area codes after municipal mergers, are not harmonized across releases (see [Purpose](#purpose)). `ksj_codelists` keeps the past codes of `AdminiBoundary_CD.xlsx` with their names, so older releases can still be named. The type and date of each change and the code after it are not kept; users who harmonize codes read them from the published list.
+
 ## Getting data
 
 `ksj_get(file_name, layer = NULL, col_names = c("ja", "raw"))` takes the name of one file, a value of `file_name` in `ksj_available` (for example `"N03-20260101_13_GML.zip"`), and returns one layer of it.
@@ -247,5 +260,6 @@ Move this to GitHub issues once the repository is published.
    - Datasets distributed as one archive per format (A31a, A31b, A33, A54: `_GML`, `_SHP`, `_GEOJSON`) have no format column in `ksj_available`, and archives of GML only cannot be read. Consider adding `format_name` from the 形式 column of the download table.
 5. Done: the English and Japanese READMEs.
 6. English names (see [English names (planned)](#english-names-planned)).
+7. Code lists (see [Code lists (planned)](#code-lists-planned)).
 
 Postponed: datasets missing from the attribute table, names for older releases, an option of `ksj_get()` and `ksj_target()` not to cache the files (so that only the final results are stored), and detecting files that MLIT replaces under the same URL and size (for example with `Last-Modified`).
