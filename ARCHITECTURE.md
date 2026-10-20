@@ -185,7 +185,8 @@ Each pipeline has one target per file of its dataset, declared with `tarchetypes
 - Archives are unzipped with `zip::unzip()`. `utils::unzip()` fails on member names in Shift_JIS (A31-12_47_GML.zip), which `zip` extracts.
 - Only the members of the layers to read are extracted (the `.shp`, `.shx`, `.dbf`, `.prj`, and `.cpg` files of the shapefiles, or else the GeoJSON files), so that large archives with GML and other formats (A33 is 1.5 GB) do not fill the disk.
 - Read the shapefiles when the archive has them, otherwise the GeoJSON. GML is not read. Shapefiles come first because the attribute table describes them (its columns are the codes of the shapefiles) and their `.prj` gives the datum. The GeoJSON of the same archive can differ: L03-b names its properties in Japanese (`細分メッシュコード`), and S05-d has no `crs` member, so it is read as WGS 84 (RFC 7946) while its shapefile is in JGD2011.
-- Shapefiles are read with the encoding of their `.cpg` file. Without one, they are read as CP932, as KSJ shapefiles without a `.cpg` file are in Shift_JIS.
+- Since 2021, some archives (N02, N05, N06) hold the same files twice, in a folder `Shift-JIS` and in a folder `UTF-8`. The copy in `Shift-JIS` is dropped when the same file is in `UTF-8`, so that each layer is read once.
+- Shapefiles are read with the encoding of their `.cpg` file. Without one, they are read as UTF-8 in a folder `UTF-8`, and as CP932 otherwise, as KSJ shapefiles without a `.cpg` file are in Shift_JIS (the shapefiles in the encoding folders have no `.cpg` file).
 - A layer is named after its file without the extension and the directories. Member names may use backslashes as separators (A31b), so they are removed too. Two layers with the same name are an error.
 - An archive with neither GeoJSON nor shapefiles is an error with its own class.
 

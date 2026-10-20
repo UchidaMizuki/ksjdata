@@ -49,6 +49,7 @@ ksj_read_archive <- function(archive, exdir) {
 # GeoJSON may name its properties otherwise (L03-b) and is read as WGS 84
 # without a `crs` member (S05-d). GML is not read.
 ksj_layer_members <- function(members) {
+  members <- ksj_drop_encoding_copies(members)
   extensions <- stringr::str_to_lower(fs::path_ext(members))
   layers <- fs::path_ext_remove(members)
   shapefiles <- layers[extensions == "shp"]
@@ -64,6 +65,30 @@ ksj_layer_members <- function(members) {
     "The archive has neither shapefiles nor GeoJSON.",
     class = "ksjdata_error_no_layers"
   )
+}
+
+# Since 2021, some archives (N02, N05, N06) hold the same files twice, in a
+# folder `Shift-JIS` and in a folder `UTF-8`. The copies in `Shift-JIS` are
+# dropped when the same file is also in `UTF-8`, so that each layer is read
+# once, in UTF-8.
+ksj_drop_encoding_copies <- function(members) {
+  folders <- ksj_encoding_folder(members)
+  files <- fs::path_file(stringr::str_replace_all(
+    members,
+    stringr::fixed("\\"),
+    "/"
+  ))
+  utf8 <- files[folders %in% "UTF-8"]
+  members[!(folders %in% "Shift-JIS" & files %in% utf8)]
+}
+
+# The encoding folder (`UTF-8` or `Shift-JIS`) of each path, or `NA`.
+ksj_encoding_folder <- function(paths) {
+  parts <- stringr::str_split(paths, "[/\\\\]")
+  purrr::map_chr(parts, \(parts) {
+    folder <- intersect(c("UTF-8", "Shift-JIS"), parts)
+    if (length(folder) == 1) folder else NA_character_
+  })
 }
 
 # Paths of the extracted layers.
@@ -96,14 +121,19 @@ ksj_layer_names <- function(paths) {
   names
 }
 
-# Shapefiles are read with the encoding of their `.cpg` file, or as CP932
-# (Shift_JIS) without one.
+# Shapefiles are read with the encoding of their `.cpg` file. Without one, they
+# are read as UTF-8 in a folder `UTF-8`, and as CP932 (Shift_JIS) otherwise.
 ksj_read_layer <- function(path) {
   options <- character()
   if (stringr::str_to_lower(fs::path_ext(path)) == "shp") {
     cpg <- fs::path_ext_set(path, c("cpg", "CPG"))
     if (!any(fs::file_exists(cpg))) {
-      options <- "ENCODING=CP932"
+      encoding <- if (ksj_encoding_folder(path) %in% "UTF-8") {
+        "UTF-8"
+      } else {
+        "CP932"
+      }
+      options <- paste0("ENCODING=", encoding)
     }
   }
   sf::read_sf(path, options = options)

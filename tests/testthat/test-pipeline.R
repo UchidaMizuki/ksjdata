@@ -137,3 +137,37 @@ test_that("ksj_pipeline() declares a target per file of the dataset", {
     )
   )
 })
+
+test_that("ksj_read_archive() reads the UTF-8 copy of a layer in both encodings", {
+  helpers <- pipeline_helpers()
+  layers <- helpers$ksj_read_archive(
+    test_path("fixtures", "encoding-folders.zip"),
+    withr::local_tempdir()
+  )
+
+  expect_named(layers, "N02-25_Station")
+  expect_equal(layers[[1]]$N02_005, "東京")
+})
+
+test_that("ksj_drop_encoding_copies() keeps layers in one encoding", {
+  helpers <- pipeline_helpers()
+  members <- c(
+    "x/Shift-JIS/a.shp",
+    "x/UTF-8/a.shp",
+    "x/Shift-JIS/b.shp",
+    "c.shp"
+  )
+
+  expect_equal(
+    helpers$ksj_drop_encoding_copies(members),
+    c("x/UTF-8/a.shp", "x/Shift-JIS/b.shp", "c.shp")
+  )
+  expect_equal(
+    helpers$ksj_encoding_folder(c(
+      "x/UTF-8/a.shp",
+      "x\\Shift-JIS\\a.shp",
+      "a.shp"
+    )),
+    c("UTF-8", "Shift-JIS", NA)
+  )
+})

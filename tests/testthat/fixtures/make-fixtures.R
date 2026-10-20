@@ -85,3 +85,25 @@ write_archive(file.path(fixtures, "shapefile.zip"), function(dir) {
 write_archive(file.path(fixtures, "gml.zip"), function(dir) {
   writeLines("<gml/>", file.path(dir, "N03-20250101_13.xml"))
 })
+
+# An archive with the same shapefile in a folder `Shift-JIS` and in a folder
+# `UTF-8`, without `.cpg` files, like N02 since 2021. The copies hold other
+# values, so that a test can tell which one was read.
+write_archive(file.path(fixtures, "encoding-folders.zip"), function(dir) {
+  for (encoding in c("Shift-JIS", "UTF-8")) {
+    dir.create(file.path(dir, "N02-25_GML", encoding), recursive = TRUE)
+    station <- st_sf(
+      N02_005 = if (encoding == "UTF-8") "東京" else "品川",
+      geometry = st_sfc(st_point(c(139.77, 35.68)), crs = 6668)
+    )
+    write_sf(
+      station,
+      file.path(dir, "N02-25_GML", encoding, "N02-25_Station.shp"),
+      layer_options = paste0(
+        "ENCODING=",
+        if (encoding == "UTF-8") "UTF-8" else "CP932"
+      )
+    )
+  }
+  unlink(list.files(dir, "\\.cpg$", full.names = TRUE, recursive = TRUE))
+})
