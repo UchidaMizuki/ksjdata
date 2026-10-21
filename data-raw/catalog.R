@@ -86,7 +86,6 @@ read_category <- function(category, url) {
     html_elements("li.collection-item") |>
     purrr::map(\(item) html_elements(item, "a"))
   page_links <- purrr::map(links, \(x) x[[1]])
-  license_links <- purrr::map(links, \(x) x[[length(x)]])
 
   tibble(
     category_name = category |>
@@ -96,12 +95,6 @@ read_category <- function(category, url) {
       str_remove("^\\s*\\d+\\.\\s*") |>
       str_squish(),
     page_url = page_links |>
-      purrr::map_chr(\(x) html_attr(x, "href")) |>
-      url_absolute(url),
-    license_name = license_links |>
-      purrr::map_chr(html_text2) |>
-      str_squish(),
-    license_url = license_links |>
       purrr::map_chr(\(x) html_attr(x, "href")) |>
       url_absolute(url)
   )
@@ -128,22 +121,9 @@ read_page <- function(url) {
       html_text2() |>
       str_remove("^\\s*国土数値情報\\s*\\|") |>
       str_squish(),
-    license_note = read_license_note(html),
     specification_url = read_specification_url(html, url),
     files = list(read_files(html, url))
   )
-}
-
-# The terms are in the cells that follow their header. They are siblings of the
-# header even where the row is not marked up (A48).
-read_license_note <- function(html) {
-  note <- html |>
-    html_element(xpath = "//th[contains(., '使用許諾条件')]") |>
-    html_elements(xpath = "following-sibling::td") |>
-    html_text2() |>
-    str_flatten(" ") |>
-    str_squish()
-  if (nzchar(note)) note else NA_character_
 }
 
 read_specification_url <- function(html, url) {
@@ -272,9 +252,6 @@ read_catalog <- function() {
         dataset_code,
         dataset_name,
         category_name,
-        license_name,
-        license_note,
-        license_url,
         page_url,
         specification_url
       ),

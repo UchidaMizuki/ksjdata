@@ -111,15 +111,8 @@ test_that("ksj_get() shows the terms of a dataset once per session", {
     list(layer = fake_layer("a"))
   })
 
-  expect_message(ksj_get(file_name, col_names = "raw"), "Terms of use of N03")
+  expect_message(ksj_get(file_name, col_names = "raw"), "terms of use of N03")
   expect_no_message(ksj_get(file_name, col_names = "raw"))
-})
-
-test_that("ksj_noncommercial() states that commercial use is not allowed", {
-  noncommercial <- "非商用"
-  expect_named(ksj_noncommercial(noncommercial, NA), "!")
-  expect_match(ksj_noncommercial("CC_BY_4.0", noncommercial), "some files")
-  expect_null(ksj_noncommercial("CC_BY_4.0", NA))
 })
 
 test_that("ksj_layer_regex() replaces the placeholders by digits", {

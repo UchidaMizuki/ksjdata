@@ -2,7 +2,7 @@
 #'
 #' `ksj_available` is the catalog of the package: it lists every file of
 #' National Land Numerical Information (Kokudo Suuchi Joho, KSJ) that the
-#' package can get, with its dataset, release, area, and terms of use. Filter
+#' package can get, with its dataset, release, area, and pages. Filter
 #' its rows and pass them to [ksj_get()]. A file that is not listed here is not
 #' supported.
 #'
@@ -24,10 +24,9 @@
 #'   \item{file_size}{Size as published (`fs::fs_bytes`). Sizes are published
 #'     in MB and KB, read as 10^6 and 10^3 bytes.}
 #'   \item{url}{URL of the archive.}
-#'   \item{license_name}{Terms of use, as labeled on the index page.}
-#'   \item{license_note}{Notes on the terms from the dataset page.}
-#'   \item{license_url}{Page of the terms.}
-#'   \item{page_url}{Download page of the dataset.}
+#'   \item{page_url}{Download page of the dataset. The terms of use of a
+#'     release are stated on the page of its version, which this page links
+#'     to.}
 #'   \item{specification_url}{Product specification of the dataset.}
 #' }
 #' @source <https://nlftp.mlit.go.jp/ksj/>
@@ -79,9 +78,6 @@ ksj_available_impl <- function(dir = "data-raw") {
       "url"
     )],
     dataset[c(
-      "license_name",
-      "license_note",
-      "license_url",
       "page_url",
       "specification_url"
     )]

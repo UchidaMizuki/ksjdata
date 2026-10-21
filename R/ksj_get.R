@@ -6,10 +6,13 @@
 #' package), so later calls read the cache. To get several files, iterate over
 #' their names, for example with `purrr::map()`.
 #'
-#' The first time in a session that a dataset is requested, its terms of use
-#' are shown, and they are also in the `license_*` columns of [ksj_available].
-#' Complying with them is up to you: published or processed data must credit
-#' the source (National Land Numerical Information, with the name of the
+#' The first time in a session that a dataset is requested, the pages of its
+#' terms of use are shown: the page of the dataset (`page_url` in
+#' [ksj_available]), whose links lead to the page of each version with its
+#' terms, and the terms of the site. Terms can differ
+#' by release and by area, and some older releases cannot be used commercially
+#' (非商用). Complying with them is up to you: published or processed data must
+#' credit the source (National Land Numerical Information, with the name of the
 #' dataset, by the Ministry of Land, Infrastructure, Transport and Tourism),
 #' and processed data must say that they were processed.
 #'
@@ -105,14 +108,17 @@ ksj_find_file <- function(file_name, call = rlang::caller_env()) {
   file
 }
 
-# rlang shows the terms of a dataset once per session, by the id of the dataset.
+# rlang points to the terms of a dataset once per session, by the id of the
+# dataset. The terms are not copied: they can differ by release and by area,
+# and the pages of the site do not state them in a form that can be read for
+# each file.
 ksj_inform_terms <- function(file) {
   cli::cli_inform(
     c(
-      "Terms of use of {file$dataset_code} ({file$dataset_name}): {file$license_name}",
-      ksj_noncommercial(file$license_name, file$license_note),
-      i = "{file$license_note}",
-      i = "{.url {file$license_url}}"
+      "Check the terms of use of {file$dataset_code} ({file$dataset_name}) for this release on its page.",
+      "!" = "Terms can differ by release and by area; some older releases cannot be used commercially.",
+      i = "{.url {file$page_url}}",
+      i = "{.url {ksj_terms_url()}}"
     ),
     .frequency = "once",
     .frequency_id = ksj_terms_id(file$dataset_code)
@@ -123,17 +129,10 @@ ksj_terms_id <- function(dataset_code) {
   stringr::str_c("ksjdata_terms_", dataset_code)
 }
 
-# The terms of a dataset forbid commercial use if its label on the index page
-# says so; its note may also forbid it for some files (A16 before 1995).
-ksj_noncommercial <- function(license_name, license_note) {
-  # "Non-commercial" in Japanese, written with code points so that the R code
-  # stays ASCII.
-  noncommercial <- stringr::fixed(intToUtf8(c(0x975e, 0x5546, 0x7528)))
-  if (stringr::str_detect(license_name, noncommercial)) {
-    c("!" = "Commercial use is not allowed.")
-  } else if (isTRUE(stringr::str_detect(license_note, noncommercial))) {
-    c("!" = "Commercial use of some files is not allowed; see the note.")
-  }
+# Page of the terms of use of the site, which lists the terms that the pages
+# of the datasets refer to.
+ksj_terms_url <- function() {
+  "https://nlftp.mlit.go.jp/ksj/other/agreement.html"
 }
 
 # Layers -----------------------------------------------------------------------
