@@ -36,10 +36,13 @@ package), so later calls read the cache. To get several files, iterate over
 their names, for example with \code{purrr::map()}.
 }
 \details{
-The first time in a session that a dataset is requested, its terms of use
-are shown, and they are also in the \verb{license_*} columns of \link{ksj_available}.
-Complying with them is up to you: published or processed data must credit
-the source (National Land Numerical Information, with the name of the
+The first time in a session that a dataset is requested, the pages of its
+terms of use are shown: the page of the dataset (\code{page_url} in
+\link{ksj_available}), whose links lead to the page of each version with its
+terms, and the terms of the site. Terms can differ
+by release and by area, and some older releases cannot be used commercially
+(非商用). Complying with them is up to you: published or processed data must
+credit the source (National Land Numerical Information, with the name of the
 dataset, by the Ministry of Land, Infrastructure, Transport and Tourism),
 and processed data must say that they were processed.
 }
