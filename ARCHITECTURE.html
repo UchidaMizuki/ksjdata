@@ -38,7 +38,7 @@
 <h2 id="purpose">Purpose<a class="anchor" aria-label="anchor" href="#purpose"></a></h2>
 <p>National Land Numerical Information (国土数値情報, KSJ), published by the Ministry of Land, Infrastructure, Transport and Tourism, through one catalog. Datasets are added as they are needed and become supported (see <a href="#supported-datasets">Supported datasets</a>).</p>
 <ul><li>
-<code>ksj_available</code> is the catalog that users see: it lists every supported file, with its dataset, release, area, and terms of use. Users browse and filter it to find what they need. A file that is not in it is not supported.</li>
+<code>ksj_available</code> is the catalog that users see: it lists every supported file, with its dataset, release, area, and pages. Users browse and filter it to find what they need. A file that is not in it is not supported.</li>
 <li>
 <code><a href="reference/ksj_get.html">ksj_get()</a></code> takes the name of one file of <code>ksj_available</code> and returns one layer of it. Nothing else is downloaded.</li>
 </ul><p>Out of scope: transformations for a particular analysis (simplifying, dissolving, aggregating, reprojecting), harmonizing attributes across releases, inventing names, and redistributing data.</p>
@@ -90,7 +90,7 @@
 </tr></thead><tbody><tr><td><code>datasets.csv</code></td>
 <td>dataset page</td>
 <td>
-<code>dataset_code</code>, <code>dataset_name</code>, <code>category_name</code>, and the terms and URLs of the page</td>
+<code>dataset_code</code>, <code>dataset_name</code>, <code>category_name</code>, and the URLs of the page</td>
 </tr><tr><td><code>catalog.csv</code></td>
 <td>downloadable file, supported or not</td>
 <td>
@@ -132,14 +132,8 @@
 <td>Size as published (<code><a href="https://fs.r-lib.org/reference/fs_bytes.html" class="external-link">fs::fs_bytes</a></code>; sizes in MB and KB are read as 10^6 and 10^3 bytes), or <code>NA</code> if it cannot be parsed</td>
 </tr><tr><td><code>url</code></td>
 <td>Absolute URL of the archive</td>
-</tr><tr><td><code>license_name</code></td>
-<td>Terms, as labeled on the index page (CC_BY_4.0, 商用可, 非商用, …)</td>
-</tr><tr><td><code>license_note</code></td>
-<td>Notes on the terms from the dataset page, for example that secondary use may need an application to the Geospatial Information Authority of Japan</td>
-</tr><tr><td><code>license_url</code></td>
-<td>Page of the terms</td>
 </tr><tr><td><code>page_url</code></td>
-<td>Download page of the dataset</td>
+<td>Download page of the dataset, which links to the pages of its versions</td>
 </tr><tr><td><code>specification_url</code></td>
 <td>Product specification (製品仕様書) linked from the dataset page</td>
 </tr></tbody></table><ul><li>Labels are kept as published. They are parsed only where a column needs a code or a number (<code>prefecture_code</code> from the area, <code>year</code> from the label, including Japanese era years).</li>
@@ -148,7 +142,7 @@
 <li>
 <code>file_name</code> is taken from the URL, as the label in the table can differ from it (A51 labels <code>A51-24_40_GML.zip</code> as <code>A51-25_40_GML.zip</code>). A URL listed more than once on a page (L02, A51) is kept once, with the row whose prefecture code is in the file name (L02 lists <code>L02-24_02_GML.zip</code> under both 東北地方 and 青森), or else the first row, and <code>data-raw/catalog.R</code> reports it.</li>
 <li>Commented-out markup of the pages is removed before reading them, as its text would otherwise be read.</li>
-<li>The terms are those shown for the dataset, so every file of a dataset has the same <code>license_name</code>. Where a page gives terms per release or per prefecture (A09, A10, P11), they are in <code>license_note</code>.</li>
+<li>The terms of use are not in the catalog. They are stated for each version of a dataset, on the page of that version: the index and the page of the latest version label the dataset as a whole (P04 as CC_BY_4.0), while the page of an older version can state other terms (非商用 for P04 of 2010 and 2014). The terms are free text, some pages state them for several releases at once, and pages of older versions do not always list their files, so they cannot be assigned to files reliably. Copying the label of the dataset would state wrong terms for some files, so <code><a href="reference/ksj_get.html">ksj_get()</a></code> points to the pages instead (see <a href="#terms-of-use">Terms of use</a>).</li>
 </ul><p>Column naming of the catalog and the attribute table (the data are named as described in <a href="#names">Names</a>):</p>
 <ul><li>Columns are in snake_case. <code>_code</code> is a code from an official classification, <code>_id</code> is an arbitrary record identifier, and <code>_name</code> is a label.</li>
 <li>Words are spelled out. The one exception is counts, which are named <code>n_&lt;things&gt;</code>.</li>
@@ -234,7 +228,7 @@
 <li>
 <code>col_names = "raw"</code> keeps the names of the file, for any release.</li>
 <li>Names of the file and Japanese names are never mixed in one result.</li>
-<li>The first time in a session that a dataset is requested, its terms (<code>license_name</code>, <code>license_note</code>, <code>license_url</code>) are shown with <code><a href="https://cli.r-lib.org/reference/cli_abort.html" class="external-link">cli::cli_inform()</a></code>, once per session by rlang’s <code>.frequency = "once"</code> (with an id per dataset), so the package keeps no state of its own. Terms that forbid commercial use (非商用) are stated explicitly.</li>
+<li>The first time in a session that a dataset is requested, the page of the dataset and the terms of the site are shown with <code><a href="https://cli.r-lib.org/reference/cli_abort.html" class="external-link">cli::cli_inform()</a></code>, with a warning that terms can differ by release and area, once per session by rlang’s <code>.frequency = "once"</code> (with an id per dataset), so the package keeps no state of its own.</li>
 </ul><div class="section level3">
 <h3 id="output">Output<a class="anchor" aria-label="anchor" href="#output"></a></h3>
 <p><code><a href="reference/ksj_get.html">ksj_get()</a></code> returns the layer as one <code>sf</code> tibble: its attributes, named as above, and its geometry. No columns are added; the file is known to the caller, who adds columns of <code>ksj_available</code> when needed.</p>
@@ -301,14 +295,14 @@
 <div class="section level2">
 <h2 id="terms-of-use">Terms of use<a class="anchor" aria-label="anchor" href="#terms-of-use"></a></h2>
 <ul><li>The default terms of KSJ are the Public Data License 1.0 (公共データ利用規約). Other datasets are CC BY 4.0, or follow older terms that allow (商用可) or forbid (非商用) commercial use.</li>
-<li>The package downloads data on the user’s machine and does not ship it, so it does not redistribute data. Complying with the terms of each file is up to the user, so they are shown in <code>ksj_available</code> and when the data are first requested.</li>
+<li>The package downloads data on the user’s machine and does not ship it, so it does not redistribute data. Complying with the terms of each file is up to the user, so the pages that state them are shown when the data are first requested. The terms are not copied (see <a href="#catalog">Catalog</a>).</li>
 <li>The documentation of <code><a href="reference/ksj_get.html">ksj_get()</a></code> states that published or processed data must credit the source and say that they were processed, as the terms require.</li>
 </ul></div>
 <div class="section level2">
 <h2 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a></h2>
 <ul><li>
 <code>README.md</code> is in English and <code>README.ja.md</code> in Japanese; each links to the other. Both are rendered from Quarto files (<code>README.qmd</code> and <code>README.ja.qmd</code>, <code>format: gfm</code>) with <code>quarto render</code>.</li>
-<li>Both list the supported datasets, generated from <code>ksj_available</code> when rendered (code, name, releases, terms), so the list never goes out of date.</li>
+<li>Both list the supported datasets, generated from <code>ksj_available</code> when rendered (code, name, releases), so the list never goes out of date.</li>
 </ul></div>
 <div class="section level2">
 <h2 id="storage">Storage<a class="anchor" aria-label="anchor" href="#storage"></a></h2>

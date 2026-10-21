@@ -49,13 +49,16 @@ published.
 
 ## Details
 
-The first time in a session that a dataset is requested, its terms of
-use are shown, and they are also in the `license_*` columns of
-[ksj_available](https://uchidamizuki.github.io/ksjdata/reference/ksj_available.md).
-Complying with them is up to you: published or processed data must
-credit the source (National Land Numerical Information, with the name of
-the dataset, by the Ministry of Land, Infrastructure, Transport and
-Tourism), and processed data must say that they were processed.
+The first time in a session that a dataset is requested, the pages of
+its terms of use are shown: the page of the dataset (`page_url` in
+[ksj_available](https://uchidamizuki.github.io/ksjdata/reference/ksj_available.md)),
+whose links lead to the page of each version with its terms, and the
+terms of the site. Terms can differ by release and by area, and some
+older releases cannot be used commercially (非商用). Complying with them
+is up to you: published or processed data must credit the source
+(National Land Numerical Information, with the name of the dataset, by
+the Ministry of Land, Infrastructure, Transport and Tourism), and
+processed data must say that they were processed.
 
 ## Examples
 

@@ -2,8 +2,8 @@
 
 `ksj_available` is the catalog of the package: it lists every file of
 National Land Numerical Information (Kokudo Suuchi Joho, KSJ) that the
-package can get, with its dataset, release, area, and terms of use.
-Filter its rows and pass them to
+package can get, with its dataset, release, area, and pages. Filter its
+rows and pass them to
 [`ksj_get()`](https://uchidamizuki.github.io/ksjdata/reference/ksj_get.md).
 A file that is not listed here is not supported.
 
@@ -64,21 +64,10 @@ A tibble with one row per file and the columns:
 
   URL of the archive.
 
-- license_name:
-
-  Terms of use, as labeled on the index page.
-
-- license_note:
-
-  Notes on the terms from the dataset page.
-
-- license_url:
-
-  Page of the terms.
-
 - page_url:
 
-  Download page of the dataset.
+  Download page of the dataset. The terms of use of a release are stated
+  on the page of its version, which this page links to.
 
 - specification_url:
 
@@ -97,7 +86,7 @@ updated with new versions of the package, not at run time.
 
 ``` r
 ksj_available
-#> # A tibble: 27,186 × 16
+#> # A tibble: 27,186 × 13
 #>    dataset_code dataset_name category_name     year year_name          area_name
 #>    <chr>        <chr>        <chr>            <int> <chr>              <chr>    
 #>  1 C23          海岸線データ 国土（水・土地）  2006 2006年（平成18年） 北海道   
@@ -111,8 +100,6 @@ ksj_available
 #>  9 C23          海岸線データ 国土（水・土地）  2006 2006年（平成18年） 千葉     
 #> 10 C23          海岸線データ 国土（水・土地）  2006 2006年（平成18年） 東京     
 #> # ℹ 27,176 more rows
-#> # ℹ 10 more variables: prefecture_code <chr>, datum_name <chr>,
-#> #   file_name <chr>, file_size <fs::bytes>, url <chr>, license_name <chr>,
-#> #   license_note <chr>, license_url <chr>, page_url <chr>,
-#> #   specification_url <chr>
+#> # ℹ 7 more variables: prefecture_code <chr>, datum_name <chr>, file_name <chr>,
+#> #   file_size <fs::bytes>, url <chr>, page_url <chr>, specification_url <chr>
 ```

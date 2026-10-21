@@ -34,9 +34,11 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.0.0.9000" id="ksjdata-0009000">ksjdata 0.0.0.9000<a class="anchor" aria-label="anchor" href="#ksjdata-0009000"></a></h2>
-<ul><li>Initial version: <code>ksj_available</code> lists the supported files of National Land Numerical Information with their terms of use, <code>ksj_attributes</code> gives the Japanese names of the attribute table, <code><a href="../reference/ksj_get.html">ksj_get()</a></code> downloads and reads one file as an <code>sf</code> tibble, and <code><a href="../reference/ksj_target.html">ksj_target()</a></code> declares it as a target.</li>
+<ul><li>Initial version: <code>ksj_available</code> lists the supported files of National Land Numerical Information with the pages of their datasets, <code>ksj_attributes</code> gives the Japanese names of the attribute table, <code><a href="../reference/ksj_get.html">ksj_get()</a></code> downloads and reads one file as an <code>sf</code> tibble, and <code><a href="../reference/ksj_target.html">ksj_target()</a></code> declares it as a target.</li>
 <li>
 <code><a href="../reference/ksj_get.html">ksj_get()</a></code> reads the archives that hold the same files in a folder <code>Shift-JIS</code> and in a folder <code>UTF-8</code> (N02, N05, and N06 since 2021), which failed with duplicated layer names: it reads the copy in <code>UTF-8</code>, as UTF-8.</li>
+<li>
+<code>ksj_available</code> no longer has the columns <code>license_name</code>, <code>license_note</code>, and <code>license_url</code>. They gave the terms of the latest version for every file of a dataset, which were wrong for older releases that cannot be used commercially (非商用, for example P04 of 2010 and 2014). <code><a href="../reference/ksj_get.html">ksj_get()</a></code> now points to the page of the dataset and the terms of the site instead.</li>
 </ul></div>
   </main></div>
 

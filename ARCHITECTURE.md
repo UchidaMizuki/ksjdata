@@ -8,9 +8,9 @@ catalog. Datasets are added as they are needed and become supported (see
 [Supported datasets](#supported-datasets)).
 
 - `ksj_available` is the catalog that users see: it lists every
-  supported file, with its dataset, release, area, and terms of use.
-  Users browse and filter it to find what they need. A file that is not
-  in it is not supported.
+  supported file, with its dataset, release, area, and pages. Users
+  browse and filter it to find what they need. A file that is not in it
+  is not supported.
 - [`ksj_get()`](https://uchidamizuki.github.io/ksjdata/reference/ksj_get.md)
   takes the name of one file of `ksj_available` and returns one layer of
   it. Nothing else is downloaded.
@@ -105,7 +105,7 @@ The scraped catalog is two CSV files in `data-raw/`:
 
 | File | One row per | Content |
 |----|----|----|
-| `datasets.csv` | dataset page | `dataset_code`, `dataset_name`, `category_name`, and the terms and URLs of the page |
+| `datasets.csv` | dataset page | `dataset_code`, `dataset_name`, `category_name`, and the URLs of the page |
 | `catalog.csv` | downloadable file, supported or not | `dataset_code`, the labels of the download table, the values parsed from them (`year`, `prefecture_code`, `file_size` in MB), `file_name`, and `url` |
 
 - The catalog is needed because `ksj_available` must be rebuilt and
@@ -148,10 +148,7 @@ Columns:
 | `file_name` | Name of the archive in its URL, for example `N03-20250101_13_GML.zip` |
 | `file_size` | Size as published ([`fs::fs_bytes`](https://fs.r-lib.org/reference/fs_bytes.html); sizes in MB and KB are read as 10^6 and 10^3 bytes), or `NA` if it cannot be parsed |
 | `url` | Absolute URL of the archive |
-| `license_name` | Terms, as labeled on the index page (CC_BY_4.0, 商用可, 非商用, …) |
-| `license_note` | Notes on the terms from the dataset page, for example that secondary use may need an application to the Geospatial Information Authority of Japan |
-| `license_url` | Page of the terms |
-| `page_url` | Download page of the dataset |
+| `page_url` | Download page of the dataset, which links to the pages of its versions |
 | `specification_url` | Product specification (製品仕様書) linked from the dataset page |
 
 - Labels are kept as published. They are parsed only where a column
@@ -170,9 +167,17 @@ Columns:
   the first row, and `data-raw/catalog.R` reports it.
 - Commented-out markup of the pages is removed before reading them, as
   its text would otherwise be read.
-- The terms are those shown for the dataset, so every file of a dataset
-  has the same `license_name`. Where a page gives terms per release or
-  per prefecture (A09, A10, P11), they are in `license_note`.
+- The terms of use are not in the catalog. They are stated for each
+  version of a dataset, on the page of that version: the index and the
+  page of the latest version label the dataset as a whole (P04 as
+  CC_BY_4.0), while the page of an older version can state other terms
+  (非商用 for P04 of 2010 and 2014). The terms are free text, some pages
+  state them for several releases at once, and pages of older versions
+  do not always list their files, so they cannot be assigned to files
+  reliably. Copying the label of the dataset would state wrong terms for
+  some files, so
+  [`ksj_get()`](https://uchidamizuki.github.io/ksjdata/reference/ksj_get.md)
+  points to the pages instead (see [Terms of use](#terms-of-use)).
 
 Column naming of the catalog and the attribute table (the data are named
 as described in [Names](#names)):
@@ -383,12 +388,12 @@ name of one file, a value of `file_name` in `ksj_available` (for example
   `col_names = "raw"`.
 - `col_names = "raw"` keeps the names of the file, for any release.
 - Names of the file and Japanese names are never mixed in one result.
-- The first time in a session that a dataset is requested, its terms
-  (`license_name`, `license_note`, `license_url`) are shown with
+- The first time in a session that a dataset is requested, the page of
+  the dataset and the terms of the site are shown with
   [`cli::cli_inform()`](https://cli.r-lib.org/reference/cli_abort.html),
-  once per session by rlang’s `.frequency = "once"` (with an id per
-  dataset), so the package keeps no state of its own. Terms that forbid
-  commercial use (非商用) are stated explicitly.
+  with a warning that terms can differ by release and area, once per
+  session by rlang’s `.frequency = "once"` (with an id per dataset), so
+  the package keeps no state of its own.
 
 ### Output
 
@@ -566,8 +571,9 @@ the layer. The placeholders of the pattern (`YY`, `YYYY`, `MM`, `DD`,
   terms that allow (商用可) or forbid (非商用) commercial use.
 - The package downloads data on the user’s machine and does not ship it,
   so it does not redistribute data. Complying with the terms of each
-  file is up to the user, so they are shown in `ksj_available` and when
-  the data are first requested.
+  file is up to the user, so the pages that state them are shown when
+  the data are first requested. The terms are not copied (see
+  [Catalog](#catalog)).
 - The documentation of
   [`ksj_get()`](https://uchidamizuki.github.io/ksjdata/reference/ksj_get.md)
   states that published or processed data must credit the source and say
@@ -579,8 +585,7 @@ the layer. The placeholders of the pattern (`YY`, `YYYY`, `MM`, `DD`,
   to the other. Both are rendered from Quarto files (`README.qmd` and
   `README.ja.qmd`, `format: gfm`) with `quarto render`.
 - Both list the supported datasets, generated from `ksj_available` when
-  rendered (code, name, releases, terms), so the list never goes out of
-  date.
+  rendered (code, name, releases), so the list never goes out of date.
 
 ## Storage
 
