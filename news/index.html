@@ -39,6 +39,10 @@
 <code><a href="../reference/ksj_get.html">ksj_get()</a></code> reads the archives that hold the same files in a folder <code>Shift-JIS</code> and in a folder <code>UTF-8</code> (N02, N05, and N06 since 2021), which failed with duplicated layer names: it reads the copy in <code>UTF-8</code>, as UTF-8.</li>
 <li>
 <code>ksj_available</code> no longer has the columns <code>license_name</code>, <code>license_note</code>, and <code>license_url</code>. They gave the terms of the latest version for every file of a dataset, which were wrong for older releases that cannot be used commercially (非商用, for example P04 of 2010 and 2014). <code><a href="../reference/ksj_get.html">ksj_get()</a></code> now points to the page of the dataset and the terms of the site instead.</li>
+<li>
+<code><a href="../reference/ksj_get.html">ksj_get()</a></code> reads the national files that are archives of the archives of the prefectures (P05 and P11 since 2022), which failed with an error that the archive has neither shapefiles nor GeoJSON.</li>
+<li>
+<code><a href="../reference/ksj_get.html">ksj_get()</a></code> reads shapefiles whose <code>.cpg</code> file says Shift_JIS (<code>SJIS</code>) as CP932, so that characters of the extension by Microsoft, such as circled numbers, are no longer replaced (for example 池袋駅東口（⑩のりば） of P11 was read as 池袋駅東口（Iのりば）). Cached files are read again on their next call.</li>
 </ul></div>
   </main></div>
 

@@ -21,3 +21,13 @@
   [`ksj_get()`](https://uchidamizuki.github.io/ksjdata/reference/ksj_get.md)
   now points to the page of the dataset and the terms of the site
   instead.
+- [`ksj_get()`](https://uchidamizuki.github.io/ksjdata/reference/ksj_get.md)
+  reads the national files that are archives of the archives of the
+  prefectures (P05 and P11 since 2022), which failed with an error that
+  the archive has neither shapefiles nor GeoJSON.
+- [`ksj_get()`](https://uchidamizuki.github.io/ksjdata/reference/ksj_get.md)
+  reads shapefiles whose `.cpg` file says Shift_JIS (`SJIS`) as CP932,
+  so that characters of the extension by Microsoft, such as circled
+  numbers, are no longer replaced (for example 池袋駅東口（⑩のりば） of
+  P11 was read as 池袋駅東口（Iのりば）). Cached files are read again on
+  their next call.

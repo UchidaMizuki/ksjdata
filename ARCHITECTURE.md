@@ -130,9 +130,8 @@ The scraped catalog is two CSV files in `data-raw/`:
 - A test checks that `ksj_available` equals `ksj_available_impl()`, so a
   forgotten rebuild after a change of the catalog, the pipelines, or
   `ksj_available_impl()` is caught. It runs where `data-raw/` is
-  available
-  ([`devtools::test()`](https://devtools.r-lib.org/reference/test.html))
-  and is skipped by `R CMD check`, which tests the built package.
+  available (`devtools::test()`) and is skipped by `R CMD check`, which
+  tests the built package.
 
 Columns:
 
@@ -477,10 +476,21 @@ target per file with
   in a folder `Shift-JIS` and in a folder `UTF-8`. The copy in
   `Shift-JIS` is dropped when the same file is in `UTF-8`, so that each
   layer is read once.
+- Since 2022, some national files (P05, P11) are archives of the
+  archives of the prefectures, without layers of their own. Their layers
+  are those of the archives inside, one level deep, each extracted to a
+  directory of its own; their names must be unique across them. The
+  functions do not call each other recursively, as targets would see a
+  cycle in the dependencies of the targets.
 - Shapefiles are read with the encoding of their `.cpg` file. Without
   one, they are read as UTF-8 in a folder `UTF-8`, and as CP932
   otherwise, as KSJ shapefiles without a `.cpg` file are in Shift_JIS
   (the shapefiles in the encoding folders have no `.cpg` file).
+- A `.cpg` file that says Shift_JIS (`SJIS`) is read as CP932, the
+  extension of Shift_JIS by Microsoft that the files are written in.
+  GDAL reads `SJIS` strictly and replaces the characters of the
+  extension: 池袋駅東口（⑩のりば） of P11 (2022) was read as
+  池袋駅東口（Iのりば）.
 - A layer is named after its file without the extension and the
   directories. Member names may use backslashes as separators (A31b), so
   they are removed too. Two layers with the same name are an error.
@@ -603,7 +613,7 @@ duckdb spatial before switching.
   Errors and messages use `cli` (`cli_abort()`, `cli_inform()`); text
   from the data is escaped before it is passed to cli.
 - Code is formatted with Air (`air.toml`, set up with
-  [`usethis::use_air()`](https://usethis.r-lib.org/reference/use_air.html)).
+  `usethis::use_air()`).
 - GitHub Actions run R CMD check on the r-lib matrix
   (`R-CMD-check.yaml`), check the formatting with Air
   (`format-check.yaml`), build the pkgdown site to the `gh-pages` branch
@@ -611,8 +621,8 @@ duckdb spatial before switching.
   (`update-catalog.yaml`). Pull requests opened with `GITHUB_TOKEN` do
   not trigger workflows, so `update-catalog.yaml` dispatches
   `R-CMD-check.yaml` on its branch. The workflows come from
-  [`usethis::use_github_action()`](https://usethis.r-lib.org/reference/use_github_action.html)
-  and the examples of `posit-dev/setup-air`.
+  `usethis::use_github_action()` and the examples of
+  `posit-dev/setup-air`.
 - `Suggests`: packages used only inside the pipelines (`curl`, `purrr`,
   `tarchetypes`, `zip`), by `ksj_available_impl()` (`readr`), in
   examples (`dplyr`), and in tests (`testthat`, `withr`). The scripts in
@@ -624,10 +634,9 @@ duckdb spatial before switching.
   paths, `purrr` for iteration (the standalone `map()` family of rlang
   in `R/`, where `purrr` is not imported, and
   [`purrr::map()`](https://purrr.tidyverse.org/reference/map.html) with
-  the namespace in `data-raw/`, because
-  [`devtools::load_all()`](https://devtools.r-lib.org/reference/load_all.html)
-  in `data-raw/build.R` attaches the standalone functions over purrr;
-  not [`lapply()`](https://rdrr.io/r/base/lapply.html),
+  the namespace in `data-raw/`, because `devtools::load_all()` in
+  `data-raw/build.R` attaches the standalone functions over purrr; not
+  [`lapply()`](https://rdrr.io/r/base/lapply.html),
   [`vapply()`](https://rdrr.io/r/base/lapply.html), or
   [`Filter()`](https://rdrr.io/r/base/funprog.html)), `tibble` for data
   frames (not [`data.frame()`](https://rdrr.io/r/base/data.frame.html)
@@ -642,10 +651,8 @@ duckdb spatial before switching.
   and
   [`vctrs::vec_in()`](https://vctrs.r-lib.org/reference/vec_match.html)
   for matching (not [`match()`](https://rdrr.io/r/base/match.html)),
-  `dplyr` for joins, and
-  [`tidyr::replace_na()`](https://tidyr.tidyverse.org/reference/replace_na.html)
-  for filling missing values with one value. Columns are dropped with
-  `select(!x)`.
+  `dplyr` for joins, and `tidyr::replace_na()` for filling missing
+  values with one value. Columns are dropped with `select(!x)`.
 
 ## Roadmap (temporary)
 
