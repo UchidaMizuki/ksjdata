@@ -30,9 +30,37 @@ ksj_build_file <- function(url, file_size) {
 }
 
 # Named list of the layers of an archive, with the column names of the files.
-# The names are the file names of the layers without the extension. Only the
-# members of the layers are extracted.
+# The names are the file names of the layers without the extension. Since
+# 2022, some national files (P05, P11) are archives of the archives of the
+# prefectures, without layers of their own: their layers are those of the
+# archives inside, each extracted to a directory of its own. The functions do
+# not recurse, as targets would see a cycle among them.
 ksj_read_archive <- function(archive, exdir) {
+  archives <- ksj_nested_archives(zip::zip_list(archive)$filename)
+  if (length(archives) == 0) {
+    return(ksj_read_layers(archive, exdir))
+  }
+  zip::unzip(archive, files = archives, exdir = exdir)
+  layers <- purrr::map(fs::path(exdir, archives), \(path) {
+    ksj_read_layers(path, fs::path_ext_remove(path))
+  })
+  layers <- purrr::list_flatten(layers)
+  ksj_check_layer_names(names(layers))
+  layers
+}
+
+# The archives in an archive without layers of its own.
+ksj_nested_archives <- function(members) {
+  extensions <- stringr::str_to_lower(fs::path_ext(members))
+  if (any(extensions %in% c("shp", "geojson"))) {
+    return(character())
+  }
+  members[extensions == "zip"]
+}
+
+# Layers of an archive that holds them. Only the members of the layers are
+# extracted.
+ksj_read_layers <- function(archive, exdir) {
   members <- ksj_layer_members(zip::zip_list(archive)$filename)
   # zip::unzip() extracts member names in Shift_JIS, which utils::unzip()
   # fails on.
@@ -107,6 +135,10 @@ ksj_layer_names <- function(paths) {
     fs::path_file() |>
     fs::path_ext_remove() |>
     as.character()
+  ksj_check_layer_names(names)
+}
+
+ksj_check_layer_names <- function(names) {
   duplicated <- unique(names[duplicated(names)])
   if (length(duplicated) > 0) {
     rlang::abort(
@@ -126,15 +158,30 @@ ksj_layer_names <- function(paths) {
 ksj_read_layer <- function(path) {
   options <- character()
   if (stringr::str_to_lower(fs::path_ext(path)) == "shp") {
-    cpg <- fs::path_ext_set(path, c("cpg", "CPG"))
-    if (!any(fs::file_exists(cpg))) {
-      encoding <- if (ksj_encoding_folder(path) %in% "UTF-8") {
-        "UTF-8"
-      } else {
-        "CP932"
-      }
+    encoding <- ksj_shapefile_encoding(path)
+    if (!is.na(encoding)) {
       options <- paste0("ENCODING=", encoding)
     }
   }
   sf::read_sf(path, options = options)
+}
+
+# The encoding to read a shapefile with, or `NA` for that of its `.cpg` file.
+# A `.cpg` file that says Shift_JIS (`SJIS`) is read as CP932, its extension
+# by Microsoft, which the files use: GDAL reads `SJIS` strictly, and replaces
+# characters such as circled numbers (P11 of 2022 has 池袋駅東口（⑩のりば）).
+ksj_shapefile_encoding <- function(path) {
+  cpg <- fs::path_ext_set(path, c("cpg", "CPG"))
+  cpg <- cpg[fs::file_exists(cpg)]
+  if (length(cpg) == 0) {
+    utf8 <- ksj_encoding_folder(path) %in% "UTF-8"
+    return(if (utf8) "UTF-8" else "CP932")
+  }
+  declared <- stringr::str_to_upper(stringr::str_trim(readLines(
+    cpg[[1]],
+    n = 1,
+    warn = FALSE
+  )))
+  shift_jis <- c("SJIS", "SHIFT_JIS", "SHIFT-JIS", "CP932", "932")
+  if (isTRUE(declared %in% shift_jis)) "CP932" else NA_character_
 }

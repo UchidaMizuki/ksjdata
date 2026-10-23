@@ -149,6 +149,43 @@ test_that("ksj_read_archive() reads the UTF-8 copy of a layer in both encodings"
   expect_equal(layers[[1]]$N02_005, "東京")
 })
 
+test_that("ksj_read_archive() reads the layers of an archive of archives", {
+  helpers <- pipeline_helpers()
+  layers <- helpers$ksj_read_archive(
+    test_path("fixtures", "nested.zip"),
+    withr::local_tempdir()
+  )
+
+  expect_named(layers, c("P05-22_01", "P05-22_13"))
+  expect_equal(layers[["P05-22_13"]]$P05_001, "13101")
+})
+
+test_that("ksj_shapefile_encoding() reads Shift_JIS as CP932", {
+  helpers <- pipeline_helpers()
+  dir <- withr::local_tempdir()
+  shp <- fs::path(dir, c("a.shp", "b.shp", "c.shp"))
+  writeLines("SJIS", fs::path(dir, "a.cpg"))
+  writeLines("UTF-8", fs::path(dir, "b.cpg"))
+
+  expect_equal(helpers$ksj_shapefile_encoding(shp[[1]]), "CP932")
+  expect_equal(helpers$ksj_shapefile_encoding(shp[[2]]), NA_character_)
+  expect_equal(helpers$ksj_shapefile_encoding(shp[[3]]), "CP932")
+  expect_equal(
+    helpers$ksj_shapefile_encoding(fs::path(dir, "UTF-8", "d.shp")),
+    "UTF-8"
+  )
+})
+
+test_that("ksj_nested_archives() lists archives only without layers", {
+  helpers <- pipeline_helpers()
+
+  expect_equal(
+    helpers$ksj_nested_archives(c("a_01.zip", "a_13.ZIP", "a.xml")),
+    c("a_01.zip", "a_13.ZIP")
+  )
+  expect_equal(helpers$ksj_nested_archives(c("a.shp", "b.zip")), character())
+})
+
 test_that("ksj_drop_encoding_copies() keeps layers in one encoding", {
   helpers <- pipeline_helpers()
   members <- c(
