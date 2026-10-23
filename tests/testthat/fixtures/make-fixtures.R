@@ -107,3 +107,24 @@ write_archive(file.path(fixtures, "encoding-folders.zip"), function(dir) {
   }
   unlink(list.files(dir, "\\.cpg$", full.names = TRUE, recursive = TRUE))
 })
+
+# An archive of archives, one per prefecture, like the national files of P05
+# and P11 since 2022.
+write_archive(file.path(fixtures, "nested.zip"), function(dir) {
+  for (code in c("01", "13")) {
+    write_archive(
+      file.path(dir, paste0("P05-22_", code, "_GML.zip")),
+      function(inner) {
+        office <- st_sf(
+          P05_001 = paste0(code, "101"),
+          geometry = st_sfc(st_point(c(139, 35)), crs = 6668)
+        )
+        write_sf(
+          office,
+          file.path(inner, paste0("P05-22_", code, ".shp")),
+          layer_options = "ENCODING=UTF-8"
+        )
+      }
+    )
+  }
+})
